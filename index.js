@@ -72,7 +72,13 @@ let enemyLevelAmount = 10;
 let maxEnemyCount = 5;
 let enemies = [];
 let enemyTypes = ["skeleton", "mage"]
-let enemyAmounts = {"skeleton":7, "mage":3};
+let skeletonAmount = 0;
+let mageAmount = 10;
+let enemyAmounts = {
+    "skeleton":skeletonAmount, 
+    "mage":mageAmount
+};
+
 let enemyImages = {
     "skeleton":{
         "walk" : skeletonWalk,
