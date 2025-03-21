@@ -1,0 +1,22 @@
+canvas {
+    background-color: black;
+    margin-top: 5em;
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    flex-direction: column;
+}
+
+section { 
+    width: 100vw;
+    height: 100vh;
+    background-color: #3c5796;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
