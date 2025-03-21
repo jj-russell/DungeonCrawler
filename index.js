@@ -71,13 +71,19 @@ let iFrames = 0;
 let enemyLevelAmount = 10;
 let maxEnemyCount = 5;
 let enemies = [];
-let enemyTypes = ["skeleton", "mage"]
-let skeletonAmount = 0;
-let mageAmount = 10;
-let enemyAmounts = {
-    "skeleton":skeletonAmount, 
-    "mage":mageAmount
-};
+
+let enemyInfo = {
+    "skeleton" : {
+        "amount": 0,
+        "attackType": "melee"
+    },
+    "mage" : {
+        "amount": 10,
+        "attackType": "range"
+    },
+}
+
+let enemyTypes = Object.keys(enemyInfo)
 
 let enemyImages = {
     "skeleton":{
@@ -152,16 +158,14 @@ function draw() {
     handleAttacking();
 
     
-    // draw player
-    context.fillStyle = "blue"
-    // context.fillRect(playerHitbox.x, playerHitbox.y, playerHitbox.width, playerHitbox.height)
+    // draw player 
     if (! player.isAttacking) {
         context.drawImage(playerWalk, player.frameX*player.width, player.frameY*player.height, player.width, player.height,
                         player.x, player.y, player.width, player.height);
     }
 
     // other objects
-    enemyAttack();
+    handleEnemyAttacking();
     for (let e of enemies) {
         // context.fillRect(enemyHitbox.x, enemyHitbox.y, enemyHitbox.width, enemyHitbox.height)
         if (e.isDying) {
@@ -176,6 +180,7 @@ function draw() {
         }
     }
 
+    // kill enemies
     for (let i = enemies.length - 1; i >= 0; i--) {
         let e = enemies[i];
         if (e.isDying) {
@@ -204,7 +209,6 @@ function draw() {
 
 function handleAttacking() {
     window.addEventListener("click", attack, false);
-
     if (player.isAttacking) {
         moveUp = moveLeft = moveDown = moveRight = false;
         swordHitbox = {
@@ -251,30 +255,6 @@ function handleAttacking() {
         context.drawImage(playerSlash, swordFrame*player.width, player.frameY*player.height, player.width, player.height,
             player.x, player.y, player.width, player.height);
 
-        // if (swordHitbox) {
-        //     for (let e of enemies) {
-        //         if (e.isDying) {
-        //             context.drawImage(skeletonDead, e.deathFrame * e.width, 0, e.width, e.height,
-        //                             e.x, e.y, e.width, e.height);
-                    
-        //             e.deathCounter++;
-        //             if (e.deathCounter >= 5) {
-        //                 e.deathCounter = 0;
-        //                 e.deathFrame++;
-        //                 if (e.deathFrame >= 6) {
-        //                     enemies.splice(enemies.indexOf(e), 1);
-        //                 }
-        //             }
-        //         } else if (e.isAttacking) {
-        //             context.drawImage(skeletonSlash, e.frameX*e.width, e.frameY*e.height, e.width, e.height,
-        //                             e.x, e.y, e.width, e.height);
-        //         } else {
-        //             context.drawImage(skeletonWalk, e.frameX*e.width, e.frameY*e.height, e.width, e.height,
-        //                             e.x, e.y, e.width, e.height);
-        //         }
-        //     }
-        // }
-
         player.attackCounter ++
         if (player.attackCounter === 2) { 
             swordFrame ++;
@@ -298,19 +278,6 @@ function handleAttacking() {
                 }
             }
         }
-
-        // kill enemy
-        // for (let i = enemies.length - 1; i >= 0; i--) {
-        //     let e = enemies[i];
-        //     if (collides(e, swordHitbox) && !e.isDying) {
-        //         e.isDying = true;
-        //         e.deathFrame = 0;
-        //         e.deathCounter = 0;
-        //         score++;
-        //         // break;
-        //     }
-        // }
-        
     }
 }
 
@@ -326,7 +293,7 @@ function createEnemies() {
         for (let type of enemyTypes) {
             let enemiesGenerated = 0;
             // generating each enemy for the amount of time they're in the level
-            let enemyCounter = enemyAmounts[type]
+            let enemyCounter = enemyInfo[type]["amount"]
             for (let i = 0; i < enemyCounter; i++) {
                 if (enemies.length === maxEnemyCount) break;
                 enemiesGenerated ++
@@ -363,7 +330,7 @@ function createEnemies() {
                 enemyLevelAmount --
 
             }
-            enemyAmounts[type] -= enemiesGenerated
+            enemyInfo[type]["amount"] -= enemiesGenerated
         }
     }
 }
@@ -430,48 +397,58 @@ function moveEnemies() {
     }
 }
 
-function enemyAttack() {
+function handleEnemyAttacking() {
     for (let e of enemies) {
-        if (e.isAttacking) {
-            let enemySwordHitbox = {
-                x: e.x,
-                y: e.y,
-                size: e.width,
-            }
-            
-            if (e.frameY === 0) { // up
-                enemySwordHitbox.y = e.y - e.height/2;
-            }
-            else if (e.frameY === 1) { // left
-                enemySwordHitbox.x = e.x - e.width/2;
-            }
-            else if (e.frameY === 2) { // down
-                enemySwordHitbox.y = e.y + e.height/2;
-            }
-            else if (e.frameY === 3) { // right
-                enemySwordHitbox.x = e.x + e.width/2;
-            }
-            
-            e.attackCounter++;
-            if (e.attackCounter >= 5) {
-                e.attackCounter = 0;
-                e.frameX++;
+        if (enemyInfo[e.type]["attackType"] === "melee") {
+            if (e.isAttacking) {
+                let enemySwordHitbox = {
+                    x: e.x,
+                    y: e.y,
+                    width: e.width,
+                    height: e.height
+                }
                 
-                if (e.frameX === 4 && collides(playerHitbox, enemySwordHitbox)) {
-                    if (iFrames === 0) {
-                        iFrames = 30;
-                        health--;
+                if (e.frameY === 0) { // up
+                    enemySwordHitbox.y = e.y - e.height/2;
+                }
+                else if (e.frameY === 1) { // left
+                    enemySwordHitbox.x = e.x - e.width/2;
+                }
+                else if (e.frameY === 2) { // down
+                    enemySwordHitbox.y = e.y + e.height/2;
+                }
+                else if (e.frameY === 3) { // right
+                    enemySwordHitbox.x = e.x + e.width/2;
+                }
+                
+                e.attackCounter++;
+                if (e.attackCounter >= 5) {
+                    e.attackCounter = 0;
+                    e.frameX++;
+                    
+                    if (e.frameX === 4 && collides(playerHitbox, enemySwordHitbox)) {
+                        if (iFrames === 0) {
+                            iFrames = 30;
+                            health--;
+                        }
+                    }
+                    
+                    if (e.frameX === 6) {
+                        e.isAttacking = false;
+                        e.frameX = 0;
                     }
                 }
-                
-                if (e.frameX === 6) {
-                    e.isAttacking = false;
-                    e.frameX = 0;
-                }
             }
-            
-            // context.fillStyle = "green";
-            // context.fillRect(enemySwordHitbox.x, enemySwordHitbox.y, enemySwordHitbox.width, enemySwordHitbox.height);
+        } 
+        else if (enemyInfo[e.type]["attackType"] === "range") {
+            let projectile = {
+                x: e.x,
+                y: e.y,
+                width: e.width,
+                height: e.height
+            }
+            context.fillStyle = "purple"
+            context.fillRect(projectile.x, projectile.y, projectile.width, projectile.height)
         }
     }
 }
