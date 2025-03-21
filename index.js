@@ -68,10 +68,11 @@ let score = 0;
 let health = 5;
 let iFrames = 0;
 
+let enemyLevelAmount = 10;
 let maxEnemyCount = 5;
 let enemies = [];
 let enemyTypes = ["skeleton", "mage"]
-let enemyAmounts = {"skeleton":3, "mage":2};
+let enemyAmounts = {"skeleton":7, "mage":3};
 let enemyImages = {
     "skeleton":{
         "walk" : skeletonWalk,
@@ -139,8 +140,11 @@ function draw() {
     context.fillStyle = "black";
     context.clearRect(0, 0, canvas.width, canvas.height);
     
-    createEnemies();
+    if (enemyLevelAmount > 0 ) {
+        createEnemies();
+    }
     handleAttacking();
+
     
     // draw player
     context.fillStyle = "blue"
@@ -228,16 +232,16 @@ function handleAttacking() {
         else if (player.frameY === 3) { // right
             swordHitbox.y += swordHitbox.height / 4
             swordHitbox.height *= 0.75
-            swordHitbox.x = player.x - player.width/2;
+            swordHitbox.x = player.x + player.width/2;
             context.beginPath();
-            context.ellipse(swordHitbox.x+swordHitbox.width, swordHitbox.y+swordHitbox.height/2, swordHitbox.width, swordHitbox.height/2, 0, -Math.PI/2, Math.PI/2);
+            context.ellipse(swordHitbox.x, swordHitbox.y+swordHitbox.height/2, swordHitbox.width, swordHitbox.height/2, 0, -Math.PI/2, Math.PI/2);
             context.lineWidth = 5;
             context.strokeStyle = 'gray';
             context.stroke();
         }
 
         context.fillStyle = "red"
-        // context.fillRect(swordHitbox.x, swordHitbox.y, swordHitbox.width, swordHitbox.height)
+        context.fillRect(swordHitbox.x, swordHitbox.y, swordHitbox.width, swordHitbox.height)
         context.drawImage(playerSlash, swordFrame*player.width, player.frameY*player.height, player.width, player.height,
             player.x, player.y, player.width, player.height);
 
@@ -314,10 +318,12 @@ function createEnemies() {
     if (enemies.length < maxEnemyCount) {
         // generating different types of enemies e.g. skeletons or mages
         for (let type of enemyTypes) {
-            // generating each enemy for the amount of time they're in the list
+            let enemiesGenerated = 0;
+            // generating each enemy for the amount of time they're in the level
             let enemyCounter = enemyAmounts[type]
             for (let i = 0; i < enemyCounter; i++) {
                 if (enemies.length === maxEnemyCount) break;
+                enemiesGenerated ++
                 let e = {
                     type: type,
                     x: 0,
@@ -348,7 +354,10 @@ function createEnemies() {
                 e.y = (e.y + (4 - e.y%4))
 
                 enemies.push(e)
+                enemyLevelAmount --
+
             }
+            enemyAmounts[type] -= enemiesGenerated
         }
     }
 }
