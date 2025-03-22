@@ -25,6 +25,8 @@ let swordHitbox = {
     size: player.width,
 }
 
+let projectiles = [];
+
 let playerHitbox = {
     x: 0, 
     y: 0, 
@@ -54,6 +56,9 @@ let mageWalk = new Image();
 let mageCast = new Image();
 let mageDead = new Image();
 
+let fireball = new Image();
+let icicle = new Image();
+
 let xChange, yChange, squareSize;
 xChange = yChange = squareSize = 20;
 
@@ -78,8 +83,9 @@ let enemyInfo = {
         "attackType": "melee"
     },
     "mage" : {
-        "amount": 10,
-        "attackType": "range"
+        "amount": 2,
+        "attackType": "range",
+        "projectileAmount": 1
     },
 }
 
@@ -134,7 +140,9 @@ function init() {
         {"var": skeletonDead, "url": "images/SKELETON_DEAD.png"},
         {"var": mageWalk, "url": "images/MAGE_WALK.png"},
         {"var": mageCast, "url": "images/MAGE_CAST.png"},
-        {"var": mageDead, "url": "images/MAGE_DEAD.png"}
+        {"var": mageDead, "url": "images/MAGE_DEAD.png"},
+        {"var": fireball, "url": "images/FIREBALL.png"},
+        {"var": icicle, "url": "images/ICICLE.png"}
     ], draw)
 
     draw();
@@ -156,7 +164,6 @@ function draw() {
         createEnemies();
     }
     handleAttacking();
-
     
     // draw player 
     if (! player.isAttacking) {
@@ -171,6 +178,7 @@ function draw() {
         if (e.isDying) {
             context.drawImage(enemyImages[e.type]["dead"], e.deathFrame * e.width, 0, e.width, e.height,
                             e.x, e.y, e.width, e.height);
+
         } else if (e.isAttacking) {
             context.drawImage(enemyImages[e.type]["slash"], e.frameX*e.width, e.frameY*e.height, e.width, e.height,
                             e.x, e.y, e.width, e.height);
@@ -179,6 +187,8 @@ function draw() {
                             e.x, e.y, e.width, e.height);
         }
     }
+
+    handleProjectiles();
 
     // kill enemies
     for (let i = enemies.length - 1; i >= 0; i--) {
@@ -337,28 +347,40 @@ function createEnemies() {
 
 function moveEnemies() {
     for (let e of enemies) {
-
         if (e.isAttacking || e.isDying) {
             continue;
         }
         // if enemy is next to the player;
         let distanceY = Math.abs(player.y - e.y);
+        let distanceX = Math.abs(player.x - e.x)
         
-           // player to the left of enemy and enemy is close    player to the right of enemy and enemy is close      
-        if (((player.x <= e.x && player.x + e.width >= e.x) || (player.x >= e.x && player.x - e.width <= e.x))
-            // and enemy is close vertically
-            && distanceY <= player.height/4) {
-            e.isAttacking = true;
-            e.frameX = 0;
-            // face the player
-            if (player.x > e.x) e.frameY = 3; // right
-            else if (player.x < e.x) e.frameY = 1; // left
-            else if (player.y < e.y) e.frameY = 0; // up
-            else if (player.y > e.y) e.frameY = 2; // down
-            
-            continue;
+        if (enemyInfo[e.type]["attackType"] === "melee") {
+            if (distanceX <= player.width && distanceY <= player.height/4) {
+                e.isAttacking = true;
+                e.frameX = 0;
+                // face the player
+                if (player.x > e.x) e.frameY = 3; // right
+                else if (player.x < e.x) e.frameY = 1; // left
+                else if (player.y < e.y) e.frameY = 0; // up
+                else if (player.y > e.y) e.frameY = 2; // down
+                
+                continue;
+            }
         }
-
+        else if (enemyInfo[e.type]["attackType"] === "range") {
+            if (distanceX <= player.width*4 && distanceY <= player.height*2) {
+                e.isAttacking = true;
+                e.frameX = 0;
+                // face the player
+                if (player.x > e.x) e.frameY = 3; // right
+                else if (player.x < e.x) e.frameY = 1; // left
+                else if (player.y < e.y) e.frameY = 0; // up
+                else if (player.y > e.y) e.frameY = 2; // down
+                
+                continue;
+            }
+        } 
+        
         if (player.x - e.width > e.x) { // right
             e.x += e.xChange;
             e.frameY = 3;
@@ -398,9 +420,10 @@ function moveEnemies() {
 }
 
 function handleEnemyAttacking() {
+    let totalProjectiles = 0;
     for (let e of enemies) {
-        if (enemyInfo[e.type]["attackType"] === "melee") {
-            if (e.isAttacking) {
+        if (e.isAttacking) {
+            if (enemyInfo[e.type]["attackType"] === "melee") {
                 let enemySwordHitbox = {
                     x: e.x,
                     y: e.y,
@@ -439,16 +462,72 @@ function handleEnemyAttacking() {
                     }
                 }
             }
-        } 
-        else if (enemyInfo[e.type]["attackType"] === "range") {
-            let projectile = {
-                x: e.x,
-                y: e.y,
-                width: e.width,
-                height: e.height
+            else if (enemyInfo[e.type]["attackType"] === "range") {
+                let p = {
+                    hasFired: false,
+                    x: 0,
+                    y: 0,
+                    width: 64,
+                    height: 64,
+                    frameX: 0,
+                    frameY: 0,
+                    xChange: 1,
+                    yChange: 1
+                }
+
+                totalProjectiles += enemyInfo[e.type]["projectileAmount"]
+                if (projectiles.length < totalProjectiles) {
+                    projectiles.push(p)
+                }
+                
+                e.attackCounter++;
+                if (e.attackCounter >= 5) {
+                    e.attackCounter = 0;
+                    e.frameX++;
+                    
+                    if (e.frameX === 4 && collides(playerHitbox, p)) {
+                        if (iFrames === 0) {
+                            iFrames = 30;
+                            health--;
+                        }
+                    }
+                    context.fillStyle = "purple"
+                    context.fillRect(p.x,p.y,p.width,p.height)
+                    
+                    if (e.frameX === 6) {
+                        e.isAttacking = false;
+                        e.frameX = 0;
+                    }
+                }
+        
+                if (! p.hasFired) {
+                    p.x = e.x;
+                    p.y = e.y;
+                    p.hasFired = true;
+                }
             }
-            context.fillStyle = "purple"
-            context.fillRect(projectile.x, projectile.y, projectile.width, projectile.height)
+        }
+    }
+}
+
+function handleProjectiles() {
+    for (let p of projectiles) {
+        p.frameX = (p.frameX + 1) % 8;
+        context.drawImage(fireball, 
+            p.frameX*p.width, p.frameY*p.height, p.width, p.height,
+            p.x, p.y, p.width, p.height)
+        
+        if (player.x < p.x) { // left
+            p.x -= p.xChange
+        }
+        if (player.x > p.x) { // right
+            p.x += p.xChange
+        }
+        if (player.y < p.y) { // up
+            p.y -= p.yChange
+        }
+        if (player.y > p.y) { // down
+            p.y += p.yChange
         }
     }
 }
