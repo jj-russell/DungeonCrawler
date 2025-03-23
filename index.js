@@ -85,9 +85,9 @@ let enemyInfo = {
         "attackType": "melee"
     },
     "mage" : {
-        "amount": 1,
+        "amount": 3,
         "attackType": "range",
-        "projectileAmount": 1
+        "maxProjectiles": 1
     },
 }
 
@@ -165,6 +165,7 @@ function draw() {
 
     context.fillStyle = "black";
     context.clearRect(0, 0, canvas.width, canvas.height);
+    
     
     if (enemyLevelAmount > 0 ) {
         createEnemies();
@@ -340,6 +341,7 @@ function createEnemies() {
 
                 if (enemyInfo[e.type]["attackType"] === "range") {
                     e.canFire = true;
+                    e.projectileCounter = 0
                 }
                 
                 e.x = randint(0, canvas.width-e.width)
@@ -437,7 +439,7 @@ function handleEnemyAttacking() {
 
     for (let e of enemies) {
         if (enemyInfo[e.type]["attackType"] === "range"){
-            totalProjectiles += enemyInfo[e.type]["projectileAmount"];
+            totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
         }
         if (e.isAttacking) {
             if (enemyInfo[e.type]["attackType"] === "melee") {
@@ -480,7 +482,7 @@ function handleEnemyAttacking() {
                 }
             }
             else if (enemyInfo[e.type]["attackType"] === "range") {
-                if ((projectiles.length < totalProjectiles)) {
+                if ((projectiles.length < totalProjectiles) && (e.projectileCounter < enemyInfo[e.type]["maxProjectiles"])) {
                     let p = {
                         id: e.id,
                         hasFired: false,
@@ -492,7 +494,8 @@ function handleEnemyAttacking() {
                         frameX: 0,
                         frameY: 0,
                     }
-                    projectiles.push(p)
+                    projectiles.push(p);
+                    e.projectileCounter ++;
                 }
 
                 e.attackCounter++;
@@ -501,7 +504,7 @@ function handleEnemyAttacking() {
                     e.frameX++;
                     
                     if (e.frameX === 6) {
-                        e.isAttacking = false;
+                        // e.isAttacking = false;
                         e.frameX = 0;
                     }
                 }
@@ -512,7 +515,6 @@ function handleEnemyAttacking() {
 
 function handleProjectiles() {
     for (let p of projectiles) {
-        console.log(p.delay)
         if (p.delay != 0) {
             p.delay --
         }
@@ -533,10 +535,33 @@ function handleProjectiles() {
             p.hasFired = true;
         }
 
-        p.x += (p.dx * projXChange)
+        // regular projectile path
+        p.x += p.dx * projXChange
         p.y += p.dy * projYChange
+
+        // predictive projectile path
+        // if (moveLeft) {
+        //     p.x += (p.dx * projXChange) - xChange
+        //     p.y += (p.dy * projYChange)
+        // }
+        // else if (moveRight) {
+        //     p.x += (p.dx * projXChange) + xChange
+        //     p.y += (p.dy * projYChange)
+        // }
+        // else if (moveUp) {
+        //     p.x += (p.dx * projXChange)
+        //     p.y += (p.dy * projYChange) - yChange
+        // }
+        // else if (moveDown) {
+        //     p.x += (p.dx * projXChange) 
+        //     p.y += (p.dy * projYChange) + yChange
+        // } else {
+        //     p.x += p.dx * projXChange
+        //     p.y += p.dy * projYChange
+        // }
         
-        // projectile frames
+
+
         if (-0.25 < p.dx && p.dx < 0.25) {
             if (p.dy > 0.9) { // down
                 p.frameY = 6;
@@ -590,6 +615,8 @@ function handleProjectiles() {
             }
             // projectiles.splice(i, 1);
         }
+        context.fillStyle = "purple"
+        context.fillRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height)
         context.drawImage(fireball, 
             p.frameX*p.width, p.frameY*p.height, p.width, p.height,
             p.x, p.y, p.width, p.height)
