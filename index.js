@@ -27,6 +27,7 @@ let swordHitbox = {
 
 let projectiles = [];
 let projXChange = 8; let projYChange = 8;
+let totalProjectiles = 0;
 
 let playerHitbox = {
     x: 0, 
@@ -81,11 +82,11 @@ let enemies = [];
 
 let enemyInfo = {
     "skeleton" : {
-        "amount": 0,
+        "amount": 2,
         "attackType": "melee"
     },
     "mage" : {
-        "amount": 3,
+        "amount": 6,
         "attackType": "range",
         "maxProjectiles": 1
     },
@@ -208,6 +209,9 @@ function draw() {
                 e.deathFrame++;
                 if (e.deathFrame >= 6) {
                     enemies.splice(i, 1);
+                    if (enemyInfo[e.type]["attackType"] === "range"){
+                        totalProjectiles -= enemyInfo[e.type]["maxProjectiles"];
+                    }
                 }
             }
         }
@@ -342,6 +346,7 @@ function createEnemies() {
                 if (enemyInfo[e.type]["attackType"] === "range") {
                     e.canFire = true;
                     e.projectileCounter = 0
+                    totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
                 }
                 
                 e.x = randint(0, canvas.width-e.width)
@@ -435,12 +440,7 @@ function moveEnemies() {
 }
 
 function handleEnemyAttacking() {
-    let totalProjectiles = 0;
-
     for (let e of enemies) {
-        if (enemyInfo[e.type]["attackType"] === "range"){
-            totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
-        }
         if (e.isAttacking) {
             if (enemyInfo[e.type]["attackType"] === "melee") {
                 let enemySwordHitbox = {
@@ -504,7 +504,7 @@ function handleEnemyAttacking() {
                     e.frameX++;
                     
                     if (e.frameX === 6) {
-                        // e.isAttacking = false;
+                        e.isAttacking = false;
                         e.frameX = 0;
                     }
                 }
@@ -538,29 +538,6 @@ function handleProjectiles() {
         // regular projectile path
         p.x += p.dx * projXChange
         p.y += p.dy * projYChange
-
-        // predictive projectile path
-        // if (moveLeft) {
-        //     p.x += (p.dx * projXChange) - xChange
-        //     p.y += (p.dy * projYChange)
-        // }
-        // else if (moveRight) {
-        //     p.x += (p.dx * projXChange) + xChange
-        //     p.y += (p.dy * projYChange)
-        // }
-        // else if (moveUp) {
-        //     p.x += (p.dx * projXChange)
-        //     p.y += (p.dy * projYChange) - yChange
-        // }
-        // else if (moveDown) {
-        //     p.x += (p.dx * projXChange) 
-        //     p.y += (p.dy * projYChange) + yChange
-        // } else {
-        //     p.x += p.dx * projXChange
-        //     p.y += p.dy * projYChange
-        // }
-        
-
 
         if (-0.25 < p.dx && p.dx < 0.25) {
             if (p.dy > 0.9) { // down

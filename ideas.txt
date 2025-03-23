@@ -1,0 +1,12 @@
+predictive projectiles that go to where the player is currently headed
+lava tiles
+spike tiles
+archers
+different element mages
+health bars
+bosses
+coins
+items
+player bow
+player other weapons
+player inventory
