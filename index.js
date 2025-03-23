@@ -26,6 +26,7 @@ let swordHitbox = {
 }
 
 let projectiles = [];
+let projXChange = 8; let projYChange = 8;
 
 let playerHitbox = {
     x: 0, 
@@ -72,6 +73,7 @@ let obstaclesAmount = 50;
 let score = 0;
 let health = 5;
 let iFrames = 0;
+let iFrameMax = 30;
 
 let enemyLevelAmount = 10;
 let maxEnemyCount = 5;
@@ -83,9 +85,9 @@ let enemyInfo = {
         "attackType": "melee"
     },
     "mage" : {
-        "amount": 2,
+        "amount": 1,
         "attackType": "range",
-        "projectileAmount": 1
+        "projectileAmount": 2
     },
 }
 
@@ -104,6 +106,8 @@ let enemyImages = {
     },
 }
 
+let enemyId = 0;
+
 let moveLeft, moveRight, moveUp, moveDown;
 moveLeft = moveRight = moveUp = moveDown = false;
 
@@ -113,6 +117,8 @@ faceLeft = faceRight = faceUp = faceDown = false;
 let clickX = 0;
 let clickY = 0;
 let hasNewClick = false;
+
+let projectileDelay = 0; 
 
 
 document.addEventListener("DOMContentLoaded", init, false);
@@ -187,7 +193,7 @@ function draw() {
                             e.x, e.y, e.width, e.height);
         }
     }
-
+    
     handleProjectiles();
 
     // kill enemies
@@ -204,7 +210,7 @@ function draw() {
             }
         }
     }
-
+    
     moveEnemies();
 
     // movement
@@ -328,6 +334,12 @@ function createEnemies() {
                     deathFrame: 0,
                     deathCounter: 0
                 }
+                e.id = enemyId;
+                enemyId ++;
+
+                if (enemyInfo[e.type]["attackType"] === "range") {
+                    e.canFire = true;
+                }
                 
                 e.x = randint(0, canvas.width-e.width)
                 e.y = randint(0, canvas.height-e.width)
@@ -421,7 +433,11 @@ function moveEnemies() {
 
 function handleEnemyAttacking() {
     let totalProjectiles = 0;
+
     for (let e of enemies) {
+        if (enemyInfo[e.type]["attackType"] === "range"){
+            totalProjectiles += enemyInfo[e.type]["projectileAmount"];
+        }
         if (e.isAttacking) {
             if (enemyInfo[e.type]["attackType"] === "melee") {
                 let enemySwordHitbox = {
@@ -451,7 +467,7 @@ function handleEnemyAttacking() {
                     
                     if (e.frameX === 4 && collides(playerHitbox, enemySwordHitbox)) {
                         if (iFrames === 0) {
-                            iFrames = 30;
+                            iFrames = iFrameMax;
                             health--;
                         }
                     }
@@ -463,47 +479,34 @@ function handleEnemyAttacking() {
                 }
             }
             else if (enemyInfo[e.type]["attackType"] === "range") {
-                let p = {
-                    hasFired: false,
-                    x: 0,
-                    y: 0,
-                    width: 64,
-                    height: 64,
-                    frameX: 0,
-                    frameY: 0,
-                    xChange: 1,
-                    yChange: 1
+                if ((projectiles.length < totalProjectiles)) {
+                    if (projectileDelay === 0) {
+                        projectileDelay = 30;
+                        let p = {
+                            id: e.id,
+                            hasFired: false,
+                            x: e.x,
+                            y: e.y,
+                            width: 64,
+                            height: 64,
+                            frameX: 0,
+                            frameY: 0,
+                        }
+                        
+                        projectiles.push(p)
+                    }
                 }
-
-                totalProjectiles += enemyInfo[e.type]["projectileAmount"]
-                if (projectiles.length < totalProjectiles) {
-                    projectiles.push(p)
-                }
+                projectileDelay --
                 
                 e.attackCounter++;
                 if (e.attackCounter >= 5) {
                     e.attackCounter = 0;
                     e.frameX++;
                     
-                    if (e.frameX === 4 && collides(playerHitbox, p)) {
-                        if (iFrames === 0) {
-                            iFrames = 30;
-                            health--;
-                        }
-                    }
-                    context.fillStyle = "purple"
-                    context.fillRect(p.x,p.y,p.width,p.height)
-                    
                     if (e.frameX === 6) {
                         e.isAttacking = false;
                         e.frameX = 0;
                     }
-                }
-        
-                if (! p.hasFired) {
-                    p.x = e.x;
-                    p.y = e.y;
-                    p.hasFired = true;
                 }
             }
         }
@@ -512,24 +515,96 @@ function handleEnemyAttacking() {
 
 function handleProjectiles() {
     for (let p of projectiles) {
+        let hitbox = {
+            x: p.x,
+            y: p.y +p.height/4,
+            width: p.width,
+            height: p.height/2
+        }
         p.frameX = (p.frameX + 1) % 8;
+        
+        if (! p.hasFired) {
+            let direction = calculateDirection(p.x, p.y, player.x, player.y);
+            p.dx = direction.dx
+            p.dy = direction.dy
+            p.hasFired = true;
+        }
+
+        p.x += p.dx * projXChange
+        p.y += p.dy * projYChange
+        
+        // projectile frames
+        if (-0.25 < p.dx && p.dx < 0.25) {
+            if (p.dy > 0.9) { // down
+                p.frameY = 6;
+                console.log("DOWN")
+            }
+            else { // up
+                p.frameY = 2;
+                console.log("UP")
+            }
+        }
+        else if (-0.25 < p.dy && p.dy < 0.25) {
+            if (p.dx > 0.9) { // right
+                p.frameY = 4;
+            }
+            else { // left
+                p.frameY = 0;
+            }
+        }
+        else if (p.dx < -0.25) {
+            if (p.dy > 0.25) { // bottom left
+                p.frameY = 7;
+            }
+            else { // top left
+                p.frameY = 1;
+            }
+        }
+        else if (p.dx > -0.25) {
+            if (p.dy > 0.25) { // bottom right
+                p.frameY = 5;
+            }
+            else { // top right
+                p.frameY = 3;
+            }
+        }
+
+        console.log(p.dx.toFixed(2)+"x", p.dy.toFixed(2)+"y")
+
+        if (collides(playerHitbox, p)) {
+            if (iFrames === 0) {
+                iFrames = iFrameMax;
+                health--;
+            }
+        }
+        
+        // projectile reaches the age 
+        if ((hitbox.y <= 0) || (hitbox.x <= 0) || (hitbox.y + hitbox.height >= canvas.height) || (hitbox.x + hitbox.width >= canvas.width)) {
+            for (let e of enemies) {
+                if (e.id === p.id) { // relate projectile to the enemy that fired it
+                    p.x = e.x;
+                    p.y = e.y;
+                    p.hasFired = false;
+                    break;
+                }
+            }
+            // projectiles.splice(i, 1);
+        }
         context.drawImage(fireball, 
             p.frameX*p.width, p.frameY*p.height, p.width, p.height,
             p.x, p.y, p.width, p.height)
-        
-        if (player.x < p.x) { // left
-            p.x -= p.xChange
-        }
-        if (player.x > p.x) { // right
-            p.x += p.xChange
-        }
-        if (player.y < p.y) { // up
-            p.y -= p.yChange
-        }
-        if (player.y > p.y) { // down
-            p.y += p.yChange
-        }
     }
+}
+
+function calculateDirection(fromX, fromY, toX, toY) {
+    let dx = toX - fromX;
+    let dy = toY - fromY;
+    
+    let length = Math.sqrt(dx * dx + dy * dy);
+    dx /= length;
+    dy /= length;
+    
+    return { dx, dy };
 }
 
 function movePlayer() {
