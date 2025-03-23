@@ -87,7 +87,7 @@ let enemyInfo = {
     "mage" : {
         "amount": 1,
         "attackType": "range",
-        "projectileAmount": 2
+        "projectileAmount": 1
     },
 }
 
@@ -118,7 +118,7 @@ let clickX = 0;
 let clickY = 0;
 let hasNewClick = false;
 
-let projectileDelay = 0; 
+let projectileDelay = 60; 
 
 
 document.addEventListener("DOMContentLoaded", init, false);
@@ -179,6 +179,7 @@ function draw() {
 
     // other objects
     handleEnemyAttacking();
+
     for (let e of enemies) {
         // context.fillRect(enemyHitbox.x, enemyHitbox.y, enemyHitbox.width, enemyHitbox.height)
         if (e.isDying) {
@@ -480,24 +481,20 @@ function handleEnemyAttacking() {
             }
             else if (enemyInfo[e.type]["attackType"] === "range") {
                 if ((projectiles.length < totalProjectiles)) {
-                    if (projectileDelay === 0) {
-                        projectileDelay = 30;
-                        let p = {
-                            id: e.id,
-                            hasFired: false,
-                            x: e.x,
-                            y: e.y,
-                            width: 64,
-                            height: 64,
-                            frameX: 0,
-                            frameY: 0,
-                        }
-                        
-                        projectiles.push(p)
+                    let p = {
+                        id: e.id,
+                        hasFired: false,
+                        delay: projectileDelay,
+                        x: e.x,
+                        y: e.y,
+                        width: 64,
+                        height: 64,
+                        frameX: 0,
+                        frameY: 0,
                     }
+                    projectiles.push(p)
                 }
-                projectileDelay --
-                
+
                 e.attackCounter++;
                 if (e.attackCounter >= 5) {
                     e.attackCounter = 0;
@@ -515,6 +512,12 @@ function handleEnemyAttacking() {
 
 function handleProjectiles() {
     for (let p of projectiles) {
+        console.log(p.delay)
+        if (p.delay != 0) {
+            p.delay --
+        }
+        
+
         let hitbox = {
             x: p.x,
             y: p.y +p.height/4,
@@ -530,18 +533,16 @@ function handleProjectiles() {
             p.hasFired = true;
         }
 
-        p.x += p.dx * projXChange
+        p.x += (p.dx * projXChange)
         p.y += p.dy * projYChange
         
         // projectile frames
         if (-0.25 < p.dx && p.dx < 0.25) {
             if (p.dy > 0.9) { // down
                 p.frameY = 6;
-                console.log("DOWN")
             }
             else { // up
                 p.frameY = 2;
-                console.log("UP")
             }
         }
         else if (-0.25 < p.dy && p.dy < 0.25) {
@@ -569,8 +570,6 @@ function handleProjectiles() {
             }
         }
 
-        console.log(p.dx.toFixed(2)+"x", p.dy.toFixed(2)+"y")
-
         if (collides(playerHitbox, p)) {
             if (iFrames === 0) {
                 iFrames = iFrameMax;
@@ -581,10 +580,11 @@ function handleProjectiles() {
         // projectile reaches the age 
         if ((hitbox.y <= 0) || (hitbox.x <= 0) || (hitbox.y + hitbox.height >= canvas.height) || (hitbox.x + hitbox.width >= canvas.width)) {
             for (let e of enemies) {
-                if (e.id === p.id) { // relate projectile to the enemy that fired it
+                if (e.id === p.id && p.delay === 0) { // relate projectile to the enemy that fired it
                     p.x = e.x;
                     p.y = e.y;
                     p.hasFired = false;
+                    p.delay = projectileDelay
                     break;
                 }
             }
