@@ -3,10 +3,13 @@ lava tiles
 spike tiles
 archers
 different element mages
-health bars
+health bars - DONE
 bosses
 coins
 items
 player bow
 player other weapons
 player inventory
+stamina/sprinting
+player return to default when no longer moving
+sword slash

@@ -7,6 +7,7 @@ let then = Date.now();
 let request_id;
 
 let player = {
+    health: 5,
     x: 64,
     y: 64,
     width: 64,
@@ -17,6 +18,14 @@ let player = {
     yChange: 8,
     attackCounter: 0,
     isAttacking: false
+}
+
+let playerHealthBar = {
+    x: player.x,
+    y: player.y,
+    width: 64,
+    height: 16,
+    frame: 0,
 }
 
 let swordHitbox = {
@@ -51,6 +60,10 @@ let swingCounter = 0;
 
 let playerWalk = new Image();
 let playerSlash = new Image();
+let playerHealthBarImage = new Image();
+
+let enemyHealthBarImage = new Image();
+
 let skeletonWalk = new Image();
 let skeletonSlash = new Image();
 let skeletonDead = new Image();
@@ -72,9 +85,8 @@ let obstacles = [];
 let obstaclesAmount = 50;
 
 let score = 0;
-let health = 5;
 let iFrames = 0;
-let iFrameMax = 30;
+let iFrameMax = 45;
 
 let enemyLevelAmount = 10;
 let maxEnemyCount = 5;
@@ -149,7 +161,9 @@ function init() {
         {"var": mageCast, "url": "images/MAGE_CAST.png"},
         {"var": mageDead, "url": "images/MAGE_DEAD.png"},
         {"var": fireball, "url": "images/FIREBALL.png"},
-        {"var": icicle, "url": "images/ICICLE.png"}
+        {"var": icicle, "url": "images/ICICLE.png"},
+        {"var": playerHealthBarImage, "url": "images/PLAYER_HEALTHBAR.png"},
+        {"var": enemyHealthBarImage, "url": "images/ENEMY_HEALTHBAR.png"}
     ], draw)
 
     draw();
@@ -166,8 +180,7 @@ function draw() {
 
     context.fillStyle = "black";
     context.clearRect(0, 0, canvas.width, canvas.height);
-    
-    
+
     if (enemyLevelAmount > 0 ) {
         createEnemies();
     }
@@ -195,6 +208,16 @@ function draw() {
             context.drawImage(enemyImages[e.type]["walk"], e.frameX*e.width, e.frameY*e.height, e.width, e.height,
                             e.x, e.y, e.width, e.height);
         }
+        let healthBar = {
+            x: e.x,
+            y: e.y,
+            width: 64,
+            height: 16,
+            frame: 0,
+        }
+
+        context.drawImage(enemyHealthBarImage, 0, healthBar.frame*healthBar.height, healthBar.width, healthBar.height,
+            e.x, e.y, healthBar.width, healthBar.height);
     }
     
     handleProjectiles();
@@ -226,7 +249,6 @@ function draw() {
     playerStats();
     if (iFrames > 0) iFrames -= 1;
     if (iFrames > 0) context.fillStyle = "red";
-
 }
 
 function handleAttacking() {
@@ -272,8 +294,6 @@ function handleAttacking() {
             context.stroke();
         }
 
-        context.fillStyle = "red"
-        context.fillRect(swordHitbox.x, swordHitbox.y, swordHitbox.width, swordHitbox.height)
         context.drawImage(playerSlash, swordFrame*player.width, player.frameY*player.height, player.width, player.height,
             player.x, player.y, player.width, player.height);
 
@@ -390,6 +410,7 @@ function moveEnemies() {
         else if (enemyInfo[e.type]["attackType"] === "range") {
             if (distanceX <= player.width*4 && distanceY <= player.height*2) {
                 e.isAttacking = true;
+                e.moveUp = e.moveLeft = e.moveDown = e.moveRight = false;
                 e.frameX = 0;
                 // face the player
                 if (player.x > e.x) e.frameY = 3; // right
@@ -470,8 +491,7 @@ function handleEnemyAttacking() {
                     
                     if (e.frameX === 4 && collides(playerHitbox, enemySwordHitbox)) {
                         if (iFrames === 0) {
-                            iFrames = iFrameMax;
-                            health--;
+                            takeDamage();
                         }
                     }
                     
@@ -574,15 +594,15 @@ function handleProjectiles() {
 
         if (collides(playerHitbox, p)) {
             if (iFrames === 0) {
-                iFrames = iFrameMax;
-                health--;
+                takeDamage();
             }
         }
         
         // projectile reaches the age 
         if ((hitbox.y <= 0) || (hitbox.x <= 0) || (hitbox.y + hitbox.height >= canvas.height) || (hitbox.x + hitbox.width >= canvas.width)) {
             for (let e of enemies) {
-                if (e.id === p.id && p.delay === 0) { // relate projectile to the enemy that fired it
+                // relate projectile to the enemy that fired it, delay between each fire, can't fire while moving
+                if (e.id === p.id && p.delay === 0 && !(e.moveUp || e.moveLeft || e.moveDown || e.moveRight)) {
                     p.x = e.x;
                     p.y = e.y;
                     p.hasFired = false;
@@ -592,8 +612,7 @@ function handleProjectiles() {
             }
             // projectiles.splice(i, 1);
         }
-        context.fillStyle = "purple"
-        context.fillRect(hitbox.x, hitbox.y, hitbox.width, hitbox.height)
+        
         context.drawImage(fireball, 
             p.frameX*p.width, p.frameY*p.height, p.width, p.height,
             p.x, p.y, p.width, p.height)
@@ -647,9 +666,20 @@ function movePlayer() {
     }
 }
 
+function takeDamage() {
+    if (player.health > 0) {
+        iFrames = iFrameMax;
+        player.health--;
+        playerHealthBar.frame ++;
+    }
+}
+
 function playerStats() {
+    context.drawImage(playerHealthBarImage, 0, playerHealthBar.frame*playerHealthBar.height, 64, 12,
+        player.x, player.y, 64, 12)
+
     let healthBar = document.querySelector("#health");
-    healthBar.innerHTML = "Health: " + health
+    healthBar.innerHTML = "Health: " + player.health
 
     let scoreDisplay = document.querySelector("#score");
     scoreDisplay.innerHTML = "Score: " + score
