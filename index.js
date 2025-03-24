@@ -8,6 +8,7 @@ let request_id;
 
 let player = {
     health: 5,
+    stamina: 25,
     x: 64,
     y: 64,
     width: 64,
@@ -17,16 +18,29 @@ let player = {
     xChange: 8,
     yChange: 8,
     attackCounter: 0,
-    isAttacking: false
+    isAttacking: false,
+    isSprinting: false
 }
 
-let playerHealthBar = {
+let healthBar = {
     x: player.x,
     y: player.y,
     width: 64,
     height: 16,
     frame: 0,
 }
+
+let staminaBar = {
+    x: player.x,
+    y: player.y + 16,
+    width: 64,
+    height: 16,
+    frame: 0,
+    max: player.stamina,
+    counter: 0,
+}
+// how often the stamina bar frame updates
+let frameInterval =  staminaBar.max / 5; 
 
 let swordHitbox = {
     x: player.x,
@@ -61,6 +75,7 @@ let swingCounter = 0;
 let playerWalk = new Image();
 let playerSlash = new Image();
 let playerHealthBarImage = new Image();
+let playerStaminaBarImage = new Image();
 
 let enemyHealthBarImage = new Image();
 
@@ -163,6 +178,7 @@ function init() {
         {"var": fireball, "url": "images/FIREBALL.png"},
         {"var": icicle, "url": "images/ICICLE.png"},
         {"var": playerHealthBarImage, "url": "images/PLAYER_HEALTHBAR.png"},
+        {"var": playerStaminaBarImage, "url": "images/STAMINA_BAR.png"},
         {"var": enemyHealthBarImage, "url": "images/ENEMY_HEALTHBAR.png"}
     ], draw)
 
@@ -208,7 +224,7 @@ function draw() {
             context.drawImage(enemyImages[e.type]["walk"], e.frameX*e.width, e.frameY*e.height, e.width, e.height,
                             e.x, e.y, e.width, e.height);
         }
-        let healthBar = {
+        let enemyHealthBar = {
             x: e.x,
             y: e.y,
             width: 64,
@@ -216,8 +232,8 @@ function draw() {
             frame: 0,
         }
 
-        context.drawImage(enemyHealthBarImage, 0, healthBar.frame*healthBar.height, healthBar.width, healthBar.height,
-            e.x, e.y, healthBar.width, healthBar.height);
+        context.drawImage(enemyHealthBarImage, 0, enemyHealthBar.frame*enemyHealthBar.height, enemyHealthBar.width, enemyHealthBar.height,
+            e.x, e.y, enemyHealthBar.width, enemyHealthBar.height);
     }
     
     handleProjectiles();
@@ -244,6 +260,43 @@ function draw() {
 
     // movement
     movePlayer(); 
+    if (player.isSprinting) {
+        if (player.stamina > 0 && player.xChange < 12) {
+            player.xChange += 1;
+            player.yChange += 1;
+            player.stamina --
+            if (player.stamina % frameInterval === 0 && staminaBar.frame < 5) {
+                staminaBar.frame ++
+            }
+        }
+        else if (player.stamina > 0) {
+            player.stamina --
+            if (player.stamina % frameInterval === 0 && staminaBar.frame < 5) {
+                staminaBar.frame ++
+            }
+        }
+        else {
+            player.isSprinting = false;
+        }
+    }
+        
+    if (! player.isSprinting && player.stamina < staminaBar.max) {
+        if (staminaBar.counter === 5) {
+            player.stamina ++
+            if (staminaBar.frame > 0 && player.stamina % frameInterval === 0) {
+                staminaBar.frame --
+            }
+            staminaBar.counter = 0;
+        }
+        else {
+            staminaBar.counter ++ 
+        }
+        if (player.xChange > 8) {
+            player.xChange -= 1;
+            player.yChange -= 1;
+        }
+ 
+    }
 
     // taking damage
     playerStats();
@@ -664,22 +717,29 @@ function movePlayer() {
             player.frameY = 3;
         }
     }
+    
+    if (!(moveLeft || moveRight || moveUp || moveDown)) {
+        player.frameX = 0;
+    }
 }
 
 function takeDamage() {
     if (player.health > 0) {
         iFrames = iFrameMax;
         player.health--;
-        playerHealthBar.frame ++;
+        healthBar.frame ++;
     }
 }
 
 function playerStats() {
-    context.drawImage(playerHealthBarImage, 0, playerHealthBar.frame*playerHealthBar.height, 64, 12,
-        player.x, player.y, 64, 12)
+    context.drawImage(playerHealthBarImage, 0, healthBar.frame*healthBar.height, healthBar.width, healthBar.height,
+        player.x, player.y-14, healthBar.width, healthBar.height)
 
-    let healthBar = document.querySelector("#health");
-    healthBar.innerHTML = "Health: " + player.health
+    context.drawImage(playerStaminaBarImage, 0, staminaBar.frame*staminaBar.height, staminaBar.width, staminaBar.height,
+        player.x, player.y, staminaBar.width, staminaBar.height)
+
+    // let healthBar = document.querySelector("#health");
+    // healthBar.innerHTML = "Health: " + player.health
 
     let scoreDisplay = document.querySelector("#score");
     scoreDisplay.innerHTML = "Score: " + score
@@ -696,7 +756,8 @@ function activate(event) {
     if (key === "ArrowLeft" || key === "a" || key === "A" ||
         key === "ArrowRight" || key === "d" || key === "D" ||
         key === "ArrowUp" || key === "w" || key === "W" ||
-        key === "ArrowDown" || key === "s" || key === "S") {
+        key === "ArrowDown" || key === "s" || key === "S" ||
+        key === "Shift") {
         event.preventDefault();
     }
 
@@ -711,6 +772,14 @@ function activate(event) {
     }
     if ((key === "ArrowDown" || key === "s" || key === "S")) {
         moveDown = true;
+    }
+    if (key === "Shift") {
+        if (player.stamina === 0) {
+            player.isSprinting = false;
+        }
+        else {
+            player.isSprinting = true;
+        }
     }
 }
 
@@ -727,7 +796,10 @@ function deactivate(event) {
     }
     if (key === "ArrowDown" || key === "s" || key === "S") {
         moveDown = false;
-    } 
+    }
+    if (key === "Shift") {
+        player.isSprinting = false;
+    }
 }
 
 function collides(obj1, obj2) {

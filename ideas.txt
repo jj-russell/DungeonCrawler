@@ -3,7 +3,6 @@ lava tiles
 spike tiles
 archers
 different element mages
-health bars - DONE
 bosses
 coins
 items
@@ -13,3 +12,5 @@ player inventory
 stamina/sprinting
 player return to default when no longer moving
 sword slash
+stamina
+health bars - DONE
