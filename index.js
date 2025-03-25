@@ -240,8 +240,23 @@ function draw() {
     handleEnemyAttacking();
 
     for (let e of enemies) {
-        // context.fillRect(enemyHitbox.x, enemyHitbox.y, enemyHitbox.width, enemyHitbox.height)
-        if (e.isDying) {
+        // spawn animation - the reverse of dying animation
+        if (e.isSpawning) {
+            e.moveUp = e.moveLeft = e.moveDown = e.moveRight = false;
+            e.spawnCounter++;
+            if (e.spawnCounter === 5) {
+                e.spawnCounter = 0;
+                e.spawnFrame--;
+                if (e.spawnFrame === 0) {  
+                    e.isSpawning = false;
+                }
+            } 
+            context.drawImage(enemyImages[e.type]["dead"], e.spawnFrame * e.width, 0, e.width, e.height,
+                e.x, e.y, e.width, e.height);
+
+            continue;
+        }
+        else if (e.isDying) {
             context.drawImage(enemyImages[e.type]["dead"], e.deathFrame * e.width, 0, e.width, e.height,
                             e.x, e.y, e.width, e.height);
 
@@ -283,6 +298,7 @@ function draw() {
             }
         }
     }
+
     
     moveEnemies();
 
@@ -343,7 +359,6 @@ function handleAttacking() {
             animationY: player.y,
             width: player.width,
             height: player.height,
-            isKilling: false,
             frameX: 0,
         }
 
@@ -417,15 +432,11 @@ function handleAttacking() {
         }
 
         for (let e of enemies) {
-            if (e.isDying) { // kill one enemy per attack
-                break;
-            }
-            else if (collides(e, swordHitbox) && !e.isDying) {
+            if (collides(e, swordHitbox) && !e.isDying) {
                 e.isDying = true;
                 e.deathFrame = 0;
                 e.deathCounter = 0;
                 score++;
-                swordHitbox.isKilling = true;
                 break;
             }
         }
@@ -467,7 +478,10 @@ function createEnemies() {
                     attackCounter: 0,
                     isDying: false,
                     deathFrame: 0,
-                    deathCounter: 0
+                    deathCounter: 0,
+                    isSpawning: true,
+                    spawnFrame: 5,
+                    spawnCounter: 0,
                 }
                 e.id = enemyId;
                 enemyId ++;
@@ -489,6 +503,7 @@ function createEnemies() {
                 enemyLevelAmount --
 
             }
+            // the amount of each enemy type to generate 
             enemyInfo[type]["amount"] -= enemiesGenerated
         }
     }
@@ -496,7 +511,7 @@ function createEnemies() {
 
 function moveEnemies() {
     for (let e of enemies) {
-        if (e.isAttacking || e.isDying) {
+        if (e.isAttacking || e.isDying || e.isSpawning) {
             continue;
         }
         // if enemy is next to the player;
@@ -828,7 +843,7 @@ function activate(event) {
     if ((key === "ArrowDown" || key === "s" || key === "S")) {
         moveDown = true;
     }
-    if (key === "Shift") {
+    if (key === "Shift" && (moveUp || moveLeft || moveDown || moveRight)) {
         if (player.stamina === 0) {
             player.isSprinting = false;
         }
