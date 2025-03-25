@@ -9,8 +9,15 @@ items
 player bow
 player other weapons
 player inventory
-stamina/sprinting
 player return to default when no longer moving
+player death animation
+enemy reverse death as spawn
+take damage animation
+damage numbers
+knockback 
+
+DONE
+
 sword slash
+health bars
 stamina
-health bars - DONE

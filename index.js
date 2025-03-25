@@ -42,10 +42,20 @@ let staminaBar = {
 // how often the stamina bar frame updates
 let frameInterval =  staminaBar.max / 5; 
 
-let swordHitbox = {
-    x: player.x,
-    y: player.y,
-    size: player.width,
+// let swordHitbox = {
+//     x: player.x,
+//     y: player.y,
+//     width: player.width,
+//     height: player.height,
+//     isKilling: false
+// }
+
+let swordAnimation = {
+    frameX: 0,
+    frameY: 0,
+    counter: 0,
+    width: 96,
+    height: 96,
 }
 
 let projectiles = [];
@@ -77,6 +87,12 @@ let playerSlash = new Image();
 let playerHealthBarImage = new Image();
 let playerStaminaBarImage = new Image();
 
+let attackUp = new Image();
+let attackDown = new Image();
+let attackLeft = new Image();
+let attackRight = new Image();
+let attackImage;
+
 let enemyHealthBarImage = new Image();
 
 let skeletonWalk = new Image();
@@ -88,6 +104,8 @@ let mageDead = new Image();
 
 let fireball = new Image();
 let icicle = new Image();
+
+let map = new Image();
 
 let xChange, yChange, squareSize;
 xChange = yChange = squareSize = 20;
@@ -109,11 +127,11 @@ let enemies = [];
 
 let enemyInfo = {
     "skeleton" : {
-        "amount": 2,
+        "amount": 200,
         "attackType": "melee"
     },
     "mage" : {
-        "amount": 6,
+        "amount": 0,
         "attackType": "range",
         "maxProjectiles": 1
     },
@@ -169,6 +187,10 @@ function init() {
     load_assets([
         {"var": playerWalk, "url": "images/CHARACTER_WALK.png"},
         {"var": playerSlash, "url": "images/CHARACTER_SLASH.png"},
+        {"var": attackUp, "url": "images/ATTACK_UP.png"},
+        {"var": attackDown, "url": "images/ATTACK_DOWN.png"},
+        {"var": attackLeft, "url": "images/ATTACK_LEFT.png"},
+        {"var": attackRight, "url": "images/ATTACK_RIGHT.png"},
         {"var": skeletonWalk, "url": "images/SKELETON_WALK.png"},
         {"var": skeletonSlash, "url": "images/SKELETON_SLASH.png"},
         {"var": skeletonDead, "url": "images/SKELETON_DEAD.png"},
@@ -179,7 +201,8 @@ function init() {
         {"var": icicle, "url": "images/ICICLE.png"},
         {"var": playerHealthBarImage, "url": "images/PLAYER_HEALTHBAR.png"},
         {"var": playerStaminaBarImage, "url": "images/STAMINA_BAR.png"},
-        {"var": enemyHealthBarImage, "url": "images/ENEMY_HEALTHBAR.png"}
+        {"var": enemyHealthBarImage, "url": "images/ENEMY_HEALTHBAR.png"},
+        {"var": map, "url": "images/map2.png"}
     ], draw)
 
     draw();
@@ -197,16 +220,21 @@ function draw() {
     context.fillStyle = "black";
     context.clearRect(0, 0, canvas.width, canvas.height);
 
+    // context.drawImage(map, 0, 0, canvas.width, canvas.height,
+    //     0, 0, canvas.width, canvas.height);
+
     if (enemyLevelAmount > 0 ) {
         createEnemies();
     }
-    handleAttacking();
     
     // draw player 
     if (! player.isAttacking) {
         context.drawImage(playerWalk, player.frameX*player.width, player.frameY*player.height, player.width, player.height,
                         player.x, player.y, player.width, player.height);
     }
+
+    // player attacking
+    handleAttacking();
 
     // other objects
     handleEnemyAttacking();
@@ -308,69 +336,97 @@ function handleAttacking() {
     window.addEventListener("click", attack, false);
     if (player.isAttacking) {
         moveUp = moveLeft = moveDown = moveRight = false;
-        swordHitbox = {
+        let swordHitbox = {
             x: player.x,
             y: player.y,
+            animationX: player.x,
+            animationY: player.y,
             width: player.width,
             height: player.height,
-            isKilling: false
+            isKilling: false,
+            frameX: 0,
         }
 
         if (player.frameY === 0) { // up
+            swordHitbox.animationX -= 16
+            swordHitbox.animationY -= 48
+            attackImage = attackUp;
             swordHitbox.x += swordHitbox.width * 0.1875
             swordHitbox.width *= 0.625
             swordHitbox.y = player.y - player.height/2;
         }
         else if (player.frameY === 1) { // left
+            swordHitbox.animationX -= 48
+            attackImage = attackLeft;
             swordHitbox.y += swordHitbox.height / 4
             swordHitbox.height *= 0.75
             swordHitbox.x = player.x - player.width/2;
-            context.beginPath();
-            context.ellipse(swordHitbox.x+swordHitbox.width, swordHitbox.y+swordHitbox.height/2, swordHitbox.width, swordHitbox.height/2, 0, Math.PI/2, -Math.PI/2);
-            context.lineWidth = 5;
-            context.strokeStyle = 'gray';
-            context.stroke();
         }
         else if (player.frameY === 2) { // down
+            swordHitbox.animationX -= 16
+            swordHitbox.animationY += 16
+            attackImage = attackDown;
             swordHitbox.x += swordHitbox.width * 0.1875
             swordHitbox.width *= 0.625
             swordHitbox.y = player.y + player.height/2;
         }
         else if (player.frameY === 3) { // right
+            swordHitbox.animationX += 16
+            attackImage = attackRight;
             swordHitbox.y += swordHitbox.height / 4
             swordHitbox.height *= 0.75
             swordHitbox.x = player.x + player.width/2;
-            context.beginPath();
-            context.ellipse(swordHitbox.x, swordHitbox.y+swordHitbox.height/2, swordHitbox.width, swordHitbox.height/2, 0, -Math.PI/2, Math.PI/2);
-            context.lineWidth = 5;
-            context.strokeStyle = 'gray';
-            context.stroke();
         }
+        
+        context.drawImage(attackImage, 
+        swordAnimation.frameX*swordAnimation.width, swordAnimation.frameY*swordAnimation.height, swordAnimation.width, swordAnimation.height,
+        swordHitbox.animationX, swordHitbox.animationY, swordAnimation.width, swordAnimation.height)
 
+        if (swordAnimation.counter === 1) {
+            swordAnimation.counter = 0;
+            if ((swordAnimation.frameY === 1 && swordAnimation.frameX < 3) || (swordAnimation.frameY === 0 && swordAnimation.frameX < 4)) {
+                swordAnimation.frameX ++
+            }
+            else {
+                if (swordAnimation.frameY === 0) {
+                    swordAnimation.frameX = 0;
+                    swordAnimation.frameY ++
+                }
+                else {
+                    swordAnimation.frameX = 0;
+                    swordAnimation.frameY = 0;
+                }
+            }
+        }
+        else {
+            swordAnimation.counter++;
+        }
+            
         context.drawImage(playerSlash, swordFrame*player.width, player.frameY*player.height, player.width, player.height,
             player.x, player.y, player.width, player.height);
 
         player.attackCounter ++
-        if (player.attackCounter === 2) { 
+        if (player.attackCounter === 3) { 
             swordFrame ++;
             player.attackCounter = 0;
         }
-
-        if (swordFrame == 6) {
+        
+        if (swordFrame === 6) {
             player.isAttacking = false;
             swordFrame = 0;
         }
 
-        if (swordFrame === 4) {
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                let e = enemies[i];
-                if (collides(e, swordHitbox) && !e.isDying) {
-                    e.isDying = true;
-                    e.deathFrame = 0;
-                    e.deathCounter = 0;
-                    score++;
-                    break;
-                }
+        for (let e of enemies) {
+            if (e.isDying) { // kill one enemy per attack
+                break;
+            }
+            else if (collides(e, swordHitbox) && !e.isDying) {
+                e.isDying = true;
+                e.deathFrame = 0;
+                e.deathCounter = 0;
+                score++;
+                swordHitbox.isKilling = true;
+                break;
             }
         }
     }
@@ -663,7 +719,6 @@ function handleProjectiles() {
                     break;
                 }
             }
-            // projectiles.splice(i, 1);
         }
         
         context.drawImage(fireball, 
