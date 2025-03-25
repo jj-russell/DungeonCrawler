@@ -9,15 +9,17 @@ items
 player bow
 player other weapons
 player inventory
-player return to default when no longer moving
 player death animation
-enemy reverse death as spawn
 take damage animation
 damage numbers
-knockback 
+knockback
+resize swordhitbox to 96*96 and line up animation without extra variables
+teleporting enemy (use handleFood function as base)
+score 
 
 DONE
 
 sword slash
 health bars
 stamina
+enemy spawn animation

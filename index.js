@@ -8,7 +8,8 @@ let request_id;
 
 let player = {
     health: 5,
-    stamina: 25,
+    damage: 1,
+    stamina: 50,
     x: 64,
     y: 64,
     width: 64,
@@ -19,7 +20,8 @@ let player = {
     yChange: 8,
     attackCounter: 0,
     isAttacking: false,
-    isSprinting: false
+    isSprinting: false,
+    isKilling: false,
 }
 
 let healthBar = {
@@ -127,11 +129,13 @@ let enemies = [];
 
 let enemyInfo = {
     "skeleton" : {
-        "amount": 200,
+        "amount": 1,
+        "maxHealth": 3,
         "attackType": "melee"
     },
     "mage" : {
         "amount": 0,
+        "maxHealth": 5,
         "attackType": "range",
         "maxProjectiles": 1
     },
@@ -150,6 +154,12 @@ let enemyImages = {
         "slash" : mageCast,
         "dead" : mageDead,
     },
+}
+
+let enemyHealthBar = {
+    width: 64,
+    height: 16,
+    frame: 10
 }
 
 let enemyId = 0;
@@ -267,13 +277,8 @@ function draw() {
             context.drawImage(enemyImages[e.type]["walk"], e.frameX*e.width, e.frameY*e.height, e.width, e.height,
                             e.x, e.y, e.width, e.height);
         }
-        let enemyHealthBar = {
-            x: e.x,
-            y: e.y,
-            width: 64,
-            height: 16,
-            frame: 0,
-        }
+    
+        enemyHealthBar.frame = Math.floor(e.health/(enemyInfo[e.type]["maxHealth"] / 10))
 
         context.drawImage(enemyHealthBarImage, 0, enemyHealthBar.frame*enemyHealthBar.height, enemyHealthBar.width, enemyHealthBar.height,
             e.x, e.y, enemyHealthBar.width, enemyHealthBar.height);
@@ -286,10 +291,10 @@ function draw() {
         let e = enemies[i];
         if (e.isDying) {
             e.deathCounter++;
-            if (e.deathCounter >= 5) {
+            if (e.deathCounter === 5) {
                 e.deathCounter = 0;
                 e.deathFrame++;
-                if (e.deathFrame >= 6) {
+                if (e.deathFrame === 6) {
                     enemies.splice(i, 1);
                     if (enemyInfo[e.type]["attackType"] === "range"){
                         totalProjectiles -= enemyInfo[e.type]["maxProjectiles"];
@@ -339,7 +344,6 @@ function draw() {
             player.xChange -= 1;
             player.yChange -= 1;
         }
- 
     }
 
     // taking damage
@@ -427,18 +431,21 @@ function handleAttacking() {
         }
         
         if (swordFrame === 6) {
+            for (let e of enemies) {
+                if (collides(e, swordHitbox) && !e.isDying) {
+                    e.health -= player.damage
+                    console.log(e.health)
+                    if (e.health <= 0) {
+                        e.isDying = true;
+                        e.deathFrame = 0;
+                        e.deathCounter = 0;
+                        score++;
+                    }
+                    break;
+                }
+            }
             player.isAttacking = false;
             swordFrame = 0;
-        }
-
-        for (let e of enemies) {
-            if (collides(e, swordHitbox) && !e.isDying) {
-                e.isDying = true;
-                e.deathFrame = 0;
-                e.deathCounter = 0;
-                score++;
-                break;
-            }
         }
     }
 }
@@ -461,6 +468,7 @@ function createEnemies() {
                 enemiesGenerated ++
                 let e = {
                     type: type,
+                    health: enemyInfo[type]["maxHealth"],
                     x: 0,
                     y: 0, 
                     width: 64,
@@ -483,6 +491,7 @@ function createEnemies() {
                     spawnFrame: 5,
                     spawnCounter: 0,
                 }
+                
                 e.id = enemyId;
                 enemyId ++;
 
@@ -613,7 +622,7 @@ function handleEnemyAttacking() {
                     e.attackCounter = 0;
                     e.frameX++;
                     
-                    if (e.frameX === 4 && collides(playerHitbox, enemySwordHitbox)) {
+                    if (e.frameX === 6 && collides(playerHitbox, enemySwordHitbox)) {
                         if (iFrames === 0) {
                             takeDamage();
                         }
@@ -807,9 +816,6 @@ function playerStats() {
 
     context.drawImage(playerStaminaBarImage, 0, staminaBar.frame*staminaBar.height, staminaBar.width, staminaBar.height,
         player.x, player.y, staminaBar.width, staminaBar.height)
-
-    // let healthBar = document.querySelector("#health");
-    // healthBar.innerHTML = "Health: " + player.health
 
     let scoreDisplay = document.querySelector("#score");
     scoreDisplay.innerHTML = "Score: " + score
