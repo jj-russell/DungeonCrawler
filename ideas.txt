@@ -12,13 +12,14 @@ player inventory
 player death animation
 take damage animation
 damage numbers
-knockback
 resize swordhitbox to 96*96 and line up animation without extra variables
 teleporting enemy (use handleFood function as base)
 score 
+dashing enemy, dashing player
 
 DONE
 
+knockback
 sword slash
 health bars
 stamina

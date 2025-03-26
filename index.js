@@ -427,29 +427,17 @@ function handleAttacking() {
         context.drawImage(playerSlash, swordFrame*player.width, player.frameY*player.height, player.width, player.height,
             player.x, player.y, player.width, player.height);
 
-        player.attackCounter ++
+        player.attackCounter ++;
         if (player.attackCounter === 3) { 
             swordFrame ++;
             player.attackCounter = 0;
         }
         
-            for (let e of enemies) {
-                if (collides(e, swordHitbox) && !e.isDying && !e.isHit) {
+        for (let e of enemies) {
+            if (collides(e, swordHitbox) && !e.isDying) {
+                if (! e.isHit) {
                     if (swordFrame <= 3) {
                         e.health -= player.damage;
-                    }
-                    // knockback
-                    if (player.frameY === 1) { // left
-                        e.x -= 64;
-                    }
-                    else if (player.frameY === 3) { // right
-                        e.x += 64;
-                    }
-                    else if (player.frameY === 2) { // down
-                        e.y += 64;
-                    }
-                    else if (player.frameY === 0) { // up
-                        e.y -= 64;
                     }
                     
                     if (e.health <= 0) {
@@ -460,7 +448,39 @@ function handleAttacking() {
                     }
                     e.isHit = true;
                 }
+
+                else if (swordFrame <= 3 && e.isHit && enemyInfo[e.type]["canKnockback"] === true) {
+
+                    // knockback enemies
+                    if (player.frameY === 1) { // left
+                        e.x -= 3*e.xChange;
+                    }
+                    else if (player.frameY === 3) { // right
+                        e.x += 3*e.xChange;
+                    }
+                    else if (player.frameY === 2) { // down
+                        e.y += 3*e.yChange;
+                    }
+                    else if (player.frameY === 0) { // up
+                        e.y -= 3*e.yChange;
+                    }
+                    
+                    // prevent enemies from being knocked out of bounds
+                    if (e.x + enemyHitbox.width >= canvas.width) { // right border
+                        e.x = canvas.width - enemyHitbox.width;
+                    }
+                    else if (e.x + enemyHitbox.width/2 <= 0) { // left border
+                        e.x = -enemyHitbox.width/2;
+                    }
+                    else if (e.y + enemyHitbox.height >= canvas.height) { // bottom border
+                        e.y = canvas.height - enemyHitbox.height;
+                    }
+                    else if (e.y + enemyHitbox.height/2 <= 0) { // top border
+                        e.y = -enemyHitbox.height/2;
+                    }
+                }
             }
+        }
 
         if (swordFrame === 6) {
             player.isAttacking = false;
@@ -578,30 +598,32 @@ function moveEnemies() {
                 continue;
             }
         } 
-        // movement
-        if (player.x - e.width > e.x) { // right
-            e.x += e.xChange;
-            e.frameY = 3;
-            e.moveRight = true;
-            e.moveUp = e.moveLeft = e.moveDown = false;
-        }
-        else if (player.x + e.width < e.x) { // left
-            e.x -= e.xChange;
-            e.frameY = 1;
-            e.moveLeft = true;
-            e.moveUp = e.moveDown = e.moveRight = false;
-        }
-        else if (player.y < e.y) { // up
-            e.y -= e.yChange;
-            e.frameY = 0;
-            e.moveUp = true;
-            e.moveLeft = e.moveDown = e.moveRight = false;
-        }
-        else if (player.y > e.y) { // down
-            e.y += e.yChange;
-            e.frameY = 2;
-            e.moveDown = true;
-            e.moveUp = e.moveLeft = e.moveRight = false;
+        if (! e.isHit) {
+            // movement
+            if (player.x - e.width > e.x) { // right
+                e.x += e.xChange;
+                e.frameY = 3;
+                e.moveRight = true;
+                e.moveUp = e.moveLeft = e.moveDown = false;
+            }
+            else if (player.x + e.width < e.x) { // left
+                e.x -= e.xChange;
+                e.frameY = 1;
+                e.moveLeft = true;
+                e.moveUp = e.moveDown = e.moveRight = false;
+            }
+            else if (player.y < e.y) { // up
+                e.y -= e.yChange;
+                e.frameY = 0;
+                e.moveUp = true;
+                e.moveLeft = e.moveDown = e.moveRight = false;
+            }
+            else if (player.y > e.y) { // down
+                e.y += e.yChange;
+                e.frameY = 2;
+                e.moveDown = true;
+                e.moveUp = e.moveLeft = e.moveRight = false;
+            }
         }
 
         if (e.moveUp || e.moveLeft || e.moveDown || e.moveRight){
@@ -645,9 +667,6 @@ function handleEnemyAttacking() {
                     enemySwordHitbox.x = e.x + e.width/2;
                 }
                 
-                context.fillStyle = "purple"
-                context.fillRect(enemySwordHitbox.x, enemySwordHitbox.y, enemySwordHitbox.width, enemySwordHitbox.height)
-
                 e.attackCounter++;
                 if (e.attackCounter >= 5) {
                     e.attackCounter = 0;
