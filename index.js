@@ -129,13 +129,15 @@ let enemies = [];
 
 let enemyInfo = {
     "skeleton" : {
-        "amount": 1,
+        "amount": 5,
         "maxHealth": 3,
+        "canKnockback": true,
         "attackType": "melee"
     },
     "mage" : {
         "amount": 0,
         "maxHealth": 5,
+        "canKnockback": true,
         "attackType": "range",
         "maxProjectiles": 1
     },
@@ -401,6 +403,7 @@ function handleAttacking() {
         swordAnimation.frameX*swordAnimation.width, swordAnimation.frameY*swordAnimation.height, swordAnimation.width, swordAnimation.height,
         swordHitbox.animationX, swordHitbox.animationY, swordAnimation.width, swordAnimation.height)
 
+        // sword slash animation
         if (swordAnimation.counter === 1) {
             swordAnimation.counter = 0;
             if ((swordAnimation.frameY === 1 && swordAnimation.frameX < 3) || (swordAnimation.frameY === 0 && swordAnimation.frameX < 4)) {
@@ -430,22 +433,41 @@ function handleAttacking() {
             player.attackCounter = 0;
         }
         
-        if (swordFrame === 6) {
             for (let e of enemies) {
-                if (collides(e, swordHitbox) && !e.isDying) {
-                    e.health -= player.damage
-                    console.log(e.health)
+                if (collides(e, swordHitbox) && !e.isDying && !e.isHit) {
+                    if (swordFrame <= 3) {
+                        e.health -= player.damage;
+                    }
+                    // knockback
+                    if (player.frameY === 1) { // left
+                        e.x -= 64;
+                    }
+                    else if (player.frameY === 3) { // right
+                        e.x += 64;
+                    }
+                    else if (player.frameY === 2) { // down
+                        e.y += 64;
+                    }
+                    else if (player.frameY === 0) { // up
+                        e.y -= 64;
+                    }
+                    
                     if (e.health <= 0) {
                         e.isDying = true;
                         e.deathFrame = 0;
                         e.deathCounter = 0;
                         score++;
                     }
-                    break;
+                    e.isHit = true;
                 }
             }
+
+        if (swordFrame === 6) {
             player.isAttacking = false;
             swordFrame = 0;
+            for (let e of enemies) {
+                e.isHit = false;
+            }
         }
     }
 }
@@ -490,6 +512,7 @@ function createEnemies() {
                     isSpawning: true,
                     spawnFrame: 5,
                     spawnCounter: 0,
+                    isHit: false,
                 }
                 
                 e.id = enemyId;
@@ -520,10 +543,11 @@ function createEnemies() {
 
 function moveEnemies() {
     for (let e of enemies) {
+        // dont move if attacking, dying, spawning
         if (e.isAttacking || e.isDying || e.isSpawning) {
             continue;
         }
-        // if enemy is next to the player;
+        // if enemy is next to the player stop and attack
         let distanceY = Math.abs(player.y - e.y);
         let distanceX = Math.abs(player.x - e.x)
         
@@ -554,26 +578,30 @@ function moveEnemies() {
                 continue;
             }
         } 
-        
+        // movement
         if (player.x - e.width > e.x) { // right
             e.x += e.xChange;
             e.frameY = 3;
             e.moveRight = true;
+            e.moveUp = e.moveLeft = e.moveDown = false;
         }
         else if (player.x + e.width < e.x) { // left
             e.x -= e.xChange;
             e.frameY = 1;
             e.moveLeft = true;
+            e.moveUp = e.moveDown = e.moveRight = false;
         }
         else if (player.y < e.y) { // up
             e.y -= e.yChange;
             e.frameY = 0;
             e.moveUp = true;
+            e.moveLeft = e.moveDown = e.moveRight = false;
         }
         else if (player.y > e.y) { // down
             e.y += e.yChange;
             e.frameY = 2;
             e.moveDown = true;
+            e.moveUp = e.moveLeft = e.moveRight = false;
         }
 
         if (e.moveUp || e.moveLeft || e.moveDown || e.moveRight){
@@ -617,6 +645,9 @@ function handleEnemyAttacking() {
                     enemySwordHitbox.x = e.x + e.width/2;
                 }
                 
+                context.fillStyle = "purple"
+                context.fillRect(enemySwordHitbox.x, enemySwordHitbox.y, enemySwordHitbox.width, enemySwordHitbox.height)
+
                 e.attackCounter++;
                 if (e.attackCounter >= 5) {
                     e.attackCounter = 0;
