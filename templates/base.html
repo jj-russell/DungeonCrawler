@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="searchport" content="width=device-width, initial-scale=1.0">
+        <title>{{ title }}</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='core.css') }}"/>
+        {% block styles %} {% endblock %}
+    </head>
+    <body>
+        <header>
+            <h1>{{ title }}</h1>
+            <nav>
+                {% block navigation %}
+                {% endblock %}
+            </nav>
+            {% if g.user %}
+                <p>Logged in as: <i>{{ g.user }}</i></p>
+                <p><a href="{{url_for('logout')}}">Logout</a></p>
+            {% else %}
+                <p><a href="{{url_for('register')}}">Register</a></p>
+                <p><a href="{{url_for('login')}}">Login</a></p>
+            {% endif %}
+        </header>
+        <main>
+            {% block main_content %}
+            {% endblock %}
+        </main>
+        <footer>
+            &copy; JJ Russell 2025
+        </footer>
+    </body>
+</html>
