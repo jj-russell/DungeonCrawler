@@ -86,7 +86,9 @@ let moveCounter = 0;
 let swingCounter = 0;
 
 let score = {
-    frame: 0,
+    hundredsFrame: 0,
+    tensFrame: 0,
+    oneFrame: 0,
     width: 136,
     height: 32,
     numSize: 32,
@@ -139,14 +141,14 @@ let enemies = [];
 
 let enemyInfo = {
     "skeleton" : {
-        "amount": 100,
+        "amount": 5,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "melee"
     },
     "mage" : {
-        "amount": 0,
-        "maxHealth": 5,
+        "amount": 20,
+        "maxHealth": 2,
         "canKnockback": true,
         "attackType": "range",
         "maxProjectiles": 1
@@ -454,7 +456,7 @@ function handleAttacking() {
                         e.deathFrame = 0;
                         e.deathCounter = 0;
                         player.score ++;
-                        score.frame ++;
+                        // score.oneFrame ++;
                     }
                     e.isHit = true;
                 }
@@ -880,23 +882,22 @@ function playerStats() {
     // "score:"
     context.drawImage(scoreDisplay, 0, 0, score.width, score.height,
         0, canvas.height-score.height, score.width, score.height);
-    
-    if (player.score >= 100) { 
-        score.frame = Math.floor(player.score/100)
-        context.drawImage(scoreDisplayNums, score.frame*score.numSize, 0, score.numSize, score.numSize,
-            score.width+2*score.numSize, canvas.height-score.numSize, score.numSize, score.numSize);
-    }
-    
-    if (player.score >= 10) {
-        score.frame = Math.floor(player.score%100 / 10)
-        context.drawImage(scoreDisplayNums, score.frame*score.numSize, 0, score.numSize, score.numSize,
-            score.width+score.numSize, canvas.height-score.numSize, score.numSize, score.numSize);
-    }
 
-    score.frame = (player.score%10)
-    context.drawImage(scoreDisplayNums, score.frame*score.numSize, 0, score.numSize, score.numSize,
+    // ones digit
+    score.oneFrame = player.score % 10
+    context.drawImage(scoreDisplayNums, score.oneFrame*score.numSize, 0, score.numSize, score.numSize,
+        score.width+2*score.numSize, canvas.height-score.numSize, score.numSize, score.numSize);
+    
+    // tens digit
+    score.tensFrame = Math.floor((player.score%100)/10)
+    console.log(score.tensFrame)
+    context.drawImage(scoreDisplayNums, score.tensFrame*score.numSize, 0, score.numSize, score.numSize,
+        score.width+score.numSize, canvas.height-score.numSize, score.numSize, score.numSize);
+
+    // hundreds digit
+    score.hundredsFrame = Math.floor(player.score/100)
+    context.drawImage(scoreDisplayNums, score.hundredsFrame*score.numSize, 0, score.numSize, score.numSize,
         score.width, canvas.height-score.height, score.numSize, score.numSize);
-
 }
 
 
