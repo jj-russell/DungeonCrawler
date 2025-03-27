@@ -42,16 +42,9 @@ let staminaBar = {
     max: player.stamina,
     counter: 0,
 }
+
 // how often the stamina bar frame updates
 let frameInterval =  staminaBar.max / 5; 
-
-// let swordHitbox = {
-//     x: player.x,
-//     y: player.y,
-//     width: player.width,
-//     height: player.height,
-//     isKilling: false
-// }
 
 let swordAnimation = {
     frameX: 0,
@@ -308,6 +301,12 @@ function draw() {
                 e.deathCounter = 0;
                 e.deathFrame++;
                 if (e.deathFrame === 6) {
+                    // remove projectile associated with enemy
+                    for (let p of projectiles) {
+                        if (e.id === p.id) {
+                            projectiles.splice(projectiles.indexOf(p), 1)
+                        }
+                    }
                     enemies.splice(i, 1);
                     if (enemyInfo[e.type]["attackType"] === "range"){
                         totalProjectiles -= enemyInfo[e.type]["maxProjectiles"];
@@ -326,13 +325,13 @@ function draw() {
         if (player.stamina > 0 && player.xChange < 12) {
             player.xChange += 1;
             player.yChange += 1;
-            player.stamina --
+            player.stamina --;
             if (player.stamina % frameInterval === 0 && staminaBar.frame < 5) {
                 staminaBar.frame ++
             }
         }
         else if (player.stamina > 0) {
-            player.stamina --
+            player.stamina --;
             if (player.stamina % frameInterval === 0 && staminaBar.frame < 5) {
                 staminaBar.frame ++
             }
@@ -344,14 +343,14 @@ function draw() {
         
     if (! player.isSprinting && player.stamina < staminaBar.max) {
         if (staminaBar.counter === 5) {
-            player.stamina ++
+            player.stamina ++;
             if (staminaBar.frame > 0 && player.stamina % frameInterval === 0) {
                 staminaBar.frame --
             }
             staminaBar.counter = 0;
         }
         else {
-            staminaBar.counter ++ 
+            staminaBar.counter ++;
         }
         if (player.xChange > 8) {
             player.xChange -= 1;
@@ -890,7 +889,6 @@ function playerStats() {
     
     // tens digit
     score.tensFrame = Math.floor((player.score%100)/10)
-    console.log(score.tensFrame)
     context.drawImage(scoreDisplayNums, score.tensFrame*score.numSize, 0, score.numSize, score.numSize,
         score.width+score.numSize, canvas.height-score.numSize, score.numSize, score.numSize);
 
