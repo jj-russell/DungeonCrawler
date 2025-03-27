@@ -14,10 +14,6 @@ class LoginForm(FlaskForm):
     submit = SubmitField("Login")
 
 class RegistrationForm(LoginForm):
-    name = StringField(validators=[
-                    InputRequired(message="* Name cannot be blank.")], 
-                    render_kw={"placeholder":"Full name"})
-
     user = StringField("User", validators=[
                     InputRequired(message="* User cannot be blank.")], 
                     render_kw={"placeholder": "Username"})

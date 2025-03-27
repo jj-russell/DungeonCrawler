@@ -42,7 +42,6 @@ def register():
 
     if form.validate_on_submit():
         user = form.user.data
-        name = form.name.data
         password = form.password.data
 
         db = get_db()
@@ -51,14 +50,14 @@ def register():
                               WHERE user = ?;""", (user,)).fetchone()
 
         if clash is not None:
-            form.user.errors.append("* user is already taken")
+            form.user.errors.append("* User is already taken")
 
         if not form.user.errors and not form.password.errors:
-            db.execute("""INSERT INTO users (user, name, password) 
-                          VALUES (?, ?, ?);""", (user, name, generate_password_hash(password)))
+            db.execute("""INSERT INTO users (user, password)
+                          VALUES (?, ?);""", (user, generate_password_hash(password)))
             db.commit()
             return redirect(url_for("index"))
-            
+
     return render_template("register.html", form=form, title="Register")
 
 @app.route("/login", methods=["GET", "POST"])

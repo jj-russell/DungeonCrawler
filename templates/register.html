@@ -1,19 +1,12 @@
 {% extends "base.html" %}
-
     {% block styles %}
     <link rel="stylesheet" href="{{ url_for('static', filename='register.css') }}" />
     {% endblock %}
-
 {% block main_content %}
 
 <form action="" method="POST" novalidate>
     {{ form.hidden_tag() }}
     <h1>Sign Up</h1>
-    
-    {{ form.name() }}
-    {% for error in form.name.errors %}
-        <span class="error">{{ error }}</span>
-    {% endfor %}
 
     {{ form.user() }}
     {% for error in form.user.errors %}
