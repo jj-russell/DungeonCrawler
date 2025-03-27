@@ -7,6 +7,7 @@ let then = Date.now();
 let request_id;
 
 let player = {
+    score: 0,
     health: 5,
     damage: 1,
     stamina: 50,
@@ -84,6 +85,16 @@ let enemySwordFrame = 0;
 let moveCounter = 0;
 let swingCounter = 0;
 
+let score = {
+    frame: 0,
+    width: 136,
+    height: 32,
+    numSize: 32,
+}
+
+let scoreDisplay = new Image();
+let scoreDisplayNums = new Image();
+
 let playerWalk = new Image();
 let playerSlash = new Image();
 let playerHealthBarImage = new Image();
@@ -119,18 +130,17 @@ let foodQueue = 0; // add food one at a time
 let obstacles = [];
 let obstaclesAmount = 50;
 
-let score = 0;
 let iFrames = 0;
 let iFrameMax = 45;
 
-let enemyLevelAmount = 10;
+let enemyLevelAmount = 100;
 let maxEnemyCount = 5;
 let enemies = [];
 
 let enemyInfo = {
     "skeleton" : {
-        "amount": 5,
-        "maxHealth": 3,
+        "amount": 100,
+        "maxHealth": 1,
         "canKnockback": true,
         "attackType": "melee"
     },
@@ -214,7 +224,9 @@ function init() {
         {"var": playerHealthBarImage, "url": "images/PLAYER_HEALTHBAR.png"},
         {"var": playerStaminaBarImage, "url": "images/STAMINA_BAR.png"},
         {"var": enemyHealthBarImage, "url": "images/ENEMY_HEALTHBAR.png"},
-        {"var": map, "url": "images/map2.png"}
+        {"var": map, "url": "images/map2.png"},
+        {"var": scoreDisplay, "url": "images/SCORE_DISPLAY.png"},
+        {"var": scoreDisplayNums, "url": "images/SCORE_DISPLAY_NUMS.png"},
     ], draw)
 
     draw();
@@ -231,9 +243,6 @@ function draw() {
 
     context.fillStyle = "black";
     context.clearRect(0, 0, canvas.width, canvas.height);
-
-    // context.drawImage(map, 0, 0, canvas.width, canvas.height,
-    //     0, 0, canvas.width, canvas.height);
 
     if (enemyLevelAmount > 0 ) {
         createEnemies();
@@ -444,7 +453,8 @@ function handleAttacking() {
                         e.isDying = true;
                         e.deathFrame = 0;
                         e.deathCounter = 0;
-                        score++;
+                        player.score ++;
+                        score.frame ++;
                     }
                     e.isHit = true;
                 }
@@ -862,13 +872,31 @@ function takeDamage() {
 
 function playerStats() {
     context.drawImage(playerHealthBarImage, 0, healthBar.frame*healthBar.height, healthBar.width, healthBar.height,
-        player.x, player.y-14, healthBar.width, healthBar.height)
+        player.x, player.y-14, healthBar.width, healthBar.height);
 
     context.drawImage(playerStaminaBarImage, 0, staminaBar.frame*staminaBar.height, staminaBar.width, staminaBar.height,
-        player.x, player.y, staminaBar.width, staminaBar.height)
+        player.x, player.y, staminaBar.width, staminaBar.height);
+    
+    // "score:"
+    context.drawImage(scoreDisplay, 0, 0, score.width, score.height,
+        0, canvas.height-score.height, score.width, score.height);
+    
+    if (player.score >= 100) { 
+        score.frame = Math.floor(player.score/100)
+        context.drawImage(scoreDisplayNums, score.frame*score.numSize, 0, score.numSize, score.numSize,
+            score.width+2*score.numSize, canvas.height-score.numSize, score.numSize, score.numSize);
+    }
+    
+    if (player.score >= 10) {
+        score.frame = Math.floor(player.score%100 / 10)
+        context.drawImage(scoreDisplayNums, score.frame*score.numSize, 0, score.numSize, score.numSize,
+            score.width+score.numSize, canvas.height-score.numSize, score.numSize, score.numSize);
+    }
 
-    let scoreDisplay = document.querySelector("#score");
-    scoreDisplay.innerHTML = "Score: " + score
+    score.frame = (player.score%10)
+    context.drawImage(scoreDisplayNums, score.frame*score.numSize, 0, score.numSize, score.numSize,
+        score.width, canvas.height-score.height, score.numSize, score.numSize);
+
 }
 
 

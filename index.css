@@ -1,22 +1,35 @@
+@font-face {
+    font-family: 'Extrude';
+    src: url('fonts/extrude.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+* {
+    margin: 0;
+    font-family: 'Extrude', sans-serif;
+    font-size: 48px;
+}
+
 canvas {
     background-color: gray;
-    margin-top: 5em;
+    margin-top: 0.5em;
 }
 
 body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
     margin: 0;
-    flex-direction: column;
 }
 
 section { 
     width: 100vw;
     height: 100vh;
     background-color: #3c5796;
-    color: white;
     display: flex;
     flex-direction: column;
     align-items: center;
+    gap: 0;
+}
+
+#score {
+    margin-top: 1em;
 }
