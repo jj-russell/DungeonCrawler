@@ -89,6 +89,7 @@ let score = {
 
 let scoreDisplay = new Image();
 let scoreDisplayNums = new Image();
+let deathScreen = new Image();
 
 let playerWalk = new Image();
 let playerSlash = new Image();
@@ -128,7 +129,7 @@ let obstaclesAmount = 50;
 let iFrames = 0;
 let iFrameMax = 45;
 
-let enemyLevelAmount = 100;
+let enemiesPerLevel = 100;
 let maxEnemyCount = 5;
 let enemies = [];
 
@@ -221,6 +222,7 @@ function init() {
         {"var": enemyHealthBarImage, "url": "../static/images/stats/ENEMY_HEALTHBAR.png"},
         {"var": scoreDisplay, "url": "../static/images/stats/SCORE_DISPLAY.png"},
         {"var": scoreDisplayNums, "url": "../static/images/stats/SCORE_DISPLAY_NUMS.png"},
+        {"var": deathScreen, "url": "../static/images/stats/DEATH_SCREEN.png"},
     ], draw)
 
     draw();
@@ -238,7 +240,7 @@ function draw() {
     context.fillStyle = "black";
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (enemyLevelAmount > 0 ) {
+    if (enemiesPerLevel > 0 ) {
         createEnemies();
     }
     
@@ -248,78 +250,60 @@ function draw() {
                         player.x, player.y, player.width, player.height);
     }
 
-    // player attacking
     handleAttacking();
 
-    // other objects
     handleEnemyAttacking();
 
-    for (let e of enemies) {
-        // spawn animation - the reverse of dying animation
-        if (e.isSpawning) {
-            e.moveUp = e.moveLeft = e.moveDown = e.moveRight = false;
-            e.spawnCounter++;
-            if (e.spawnCounter === 5) {
-                e.spawnCounter = 0;
-                e.spawnFrame--;
-                if (e.spawnFrame === 0) {  
-                    e.isSpawning = false;
-                }
-            } 
-            context.drawImage(enemyImages[e.type]["dead"], e.spawnFrame * e.width, 0, e.width, e.height,
-                e.x, e.y, e.width, e.height);
-
-            continue;
-        }
-        else if (e.isDying) {
-            context.drawImage(enemyImages[e.type]["dead"], e.deathFrame * e.width, 0, e.width, e.height,
-                            e.x, e.y, e.width, e.height);
-
-        } else if (e.isAttacking) {
-            context.drawImage(enemyImages[e.type]["slash"], e.frameX*e.width, e.frameY*e.height, e.width, e.height,
-                            e.x, e.y, e.width, e.height);
-        } else {
-            context.drawImage(enemyImages[e.type]["walk"], e.frameX*e.width, e.frameY*e.height, e.width, e.height,
-                            e.x, e.y, e.width, e.height);
-        }
-    
-        enemyHealthBar.frame = Math.floor(e.health/(enemyInfo[e.type]["maxHealth"] / 10))
-
-        context.drawImage(enemyHealthBarImage, 0, enemyHealthBar.frame*enemyHealthBar.height, enemyHealthBar.width, enemyHealthBar.height,
-            e.x, e.y, enemyHealthBar.width, enemyHealthBar.height);
-    }
+    drawEnemies();
     
     handleProjectiles();
-
-    // kill enemies
-    for (let i = enemies.length - 1; i >= 0; i--) {
-        let e = enemies[i];
-        if (e.isDying) {
-            e.deathCounter++;
-            if (e.deathCounter === 5) {
-                e.deathCounter = 0;
-                e.deathFrame++;
-                if (e.deathFrame === 6) {
-                    // remove projectile associated with enemy
-                    for (let p of projectiles) {
-                        if (e.id === p.id) {
-                            projectiles.splice(projectiles.indexOf(p), 1)
-                        }
-                    }
-                    enemies.splice(i, 1);
-                    if (enemyInfo[e.type]["attackType"] === "range"){
-                        totalProjectiles -= enemyInfo[e.type]["maxProjectiles"];
-                    }
-                }
-            }
-        }
-    }
-
     
     moveEnemies();
 
-    // movement
     movePlayer(); 
+
+    playerStats();
+}
+
+function movePlayer() {
+    playerHitbox = {
+        x: player.x+16, 
+        y: player.y+12, 
+        width: player.width/2, 
+        height: player.height-12
+    }
+
+    if ((moveLeft || moveRight) && !(moveLeft && moveRight) || (moveUp || moveDown) && !(moveUp && moveDown)) {
+        moveCounter ++
+        if (moveCounter === 2) {
+            moveCounter = 0;
+            player.frameX = (player.frameX + 1) % 4;
+        }
+    }
+
+    if ( !(moveLeft && moveRight) || !(moveUp && moveDown)) {
+        if (moveUp && !(playerHitbox.y === 0)) {
+            player.y -= player.yChange;
+            player.frameY = 0;
+        }
+        if (moveLeft && !(playerHitbox.x === 0)) {
+            player.x -= player.xChange;
+            player.frameY = 1;
+        }
+        if (moveDown && !(playerHitbox.y + playerHitbox.width >= canvas.height)) {
+            player.y += player.yChange;
+            player.frameY = 2;
+        }
+        if (moveRight && !(playerHitbox.x + playerHitbox.width >= canvas.width)) {
+            player.x += player.xChange;
+            player.frameY = 3;
+        }
+    }
+    
+    if (!(moveLeft || moveRight || moveUp || moveDown)) {
+        player.frameX = 0;
+    }
+
     if (player.isSprinting) {
         if (player.stamina > 0 && player.xChange < 12) {
             player.xChange += 1;
@@ -356,11 +340,6 @@ function draw() {
             player.yChange -= 1;
         }
     }
-
-    // taking damage
-    playerStats();
-    if (iFrames > 0) iFrames -= 1;
-    if (iFrames > 0) context.fillStyle = "red";
 }
 
 function handleAttacking() {
@@ -500,6 +479,30 @@ function handleAttacking() {
             }
         }
     }
+    
+    // kill enemies
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        let e = enemies[i];
+        if (e.isDying) {
+            e.deathCounter++;
+            if (e.deathCounter === 5) {
+                e.deathCounter = 0;
+                e.deathFrame++;
+                if (e.deathFrame === 6) {
+                    // remove projectile associated with enemy
+                    for (let p of projectiles) {
+                        if (e.id === p.id) {
+                            projectiles.splice(projectiles.indexOf(p), 1)
+                        }
+                    }
+                    enemies.splice(i, 1);
+                    if (enemyInfo[e.type]["attackType"] === "range"){
+                        totalProjectiles -= enemyInfo[e.type]["maxProjectiles"];
+                    }
+                }
+            }
+        }
+    }
 }
 
 function attack() {
@@ -562,12 +565,49 @@ function createEnemies() {
                 e.y = (e.y + (4 - e.y%4))
 
                 enemies.push(e)
-                enemyLevelAmount --
+                enemiesPerLevel --
 
             }
             // the amount of each enemy type to generate 
             enemyInfo[type]["amount"] -= enemiesGenerated
         }
+    }
+}
+
+function drawEnemies() {
+    for (let e of enemies) {
+        // spawn animation - the reverse of dying animation
+        if (e.isSpawning) {
+            e.moveUp = e.moveLeft = e.moveDown = e.moveRight = false;
+            e.spawnCounter++;
+            if (e.spawnCounter === 5) {
+                e.spawnCounter = 0;
+                e.spawnFrame--;
+                if (e.spawnFrame === 0) {  
+                    e.isSpawning = false;
+                }
+            } 
+            context.drawImage(enemyImages[e.type]["dead"], e.spawnFrame * e.width, 0, e.width, e.height,
+                e.x, e.y, e.width, e.height);
+
+            continue;
+        }
+        else if (e.isDying) {
+            context.drawImage(enemyImages[e.type]["dead"], e.deathFrame * e.width, 0, e.width, e.height,
+                            e.x, e.y, e.width, e.height);
+
+        } else if (e.isAttacking) {
+            context.drawImage(enemyImages[e.type]["slash"], e.frameX*e.width, e.frameY*e.height, e.width, e.height,
+                            e.x, e.y, e.width, e.height);
+        } else {
+            context.drawImage(enemyImages[e.type]["walk"], e.frameX*e.width, e.frameY*e.height, e.width, e.height,
+                            e.x, e.y, e.width, e.height);
+        }
+    
+        enemyHealthBar.frame = Math.floor(e.health/(enemyInfo[e.type]["maxHealth"] / 10))
+
+        context.drawImage(enemyHealthBarImage, 0, enemyHealthBar.frame*enemyHealthBar.height, enemyHealthBar.width, enemyHealthBar.height,
+            e.x, e.y, enemyHealthBar.width, enemyHealthBar.height);
     }
 }
 
@@ -822,46 +862,6 @@ function calculateDirection(fromX, fromY, toX, toY) {
     return { dx, dy };
 }
 
-function movePlayer() {
-    playerHitbox = {
-        x: player.x+16, 
-        y: player.y+12, 
-        width: player.width/2, 
-        height: player.height-12
-    }
-
-    if ((moveLeft || moveRight) && !(moveLeft && moveRight) || (moveUp || moveDown) && !(moveUp && moveDown)) {
-        moveCounter ++
-        if (moveCounter === 2) {
-            moveCounter = 0;
-            player.frameX = (player.frameX + 1) % 4;
-        }
-    }
-
-    if ( !(moveLeft && moveRight) || !(moveUp && moveDown)) {
-        if (moveUp && !(playerHitbox.y === 0)) {
-            player.y -= player.yChange;
-            player.frameY = 0;
-        }
-        if (moveLeft && !(playerHitbox.x === 0)) {
-            player.x -= player.xChange;
-            player.frameY = 1;
-        }
-        if (moveDown && !(playerHitbox.y + playerHitbox.width >= canvas.height)) {
-            player.y += player.yChange;
-            player.frameY = 2;
-        }
-        if (moveRight && !(playerHitbox.x + playerHitbox.width >= canvas.width)) {
-            player.x += player.xChange;
-            player.frameY = 3;
-        }
-    }
-    
-    if (!(moveLeft || moveRight || moveUp || moveDown)) {
-        player.frameX = 0;
-    }
-}
-
 function takeDamage() {
     if (player.health > 0) {
         iFrames = iFrameMax;
@@ -884,17 +884,26 @@ function playerStats() {
     // ones digit
     score.oneFrame = player.score % 10
     context.drawImage(scoreDisplayNums, score.oneFrame*score.numSize, 0, score.numSize, score.numSize,
-        score.width+2*score.numSize, canvas.height-score.numSize, score.numSize, score.numSize);
+        (score.width+2*score.numSize)-16, canvas.height-score.numSize, score.numSize, score.numSize);
     
     // tens digit
     score.tensFrame = Math.floor((player.score%100)/10)
     context.drawImage(scoreDisplayNums, score.tensFrame*score.numSize, 0, score.numSize, score.numSize,
-        score.width+score.numSize, canvas.height-score.numSize, score.numSize, score.numSize);
+        (score.width+score.numSize)-8, canvas.height-score.numSize, score.numSize, score.numSize);
 
     // hundreds digit
     score.hundredsFrame = Math.floor(player.score/100)
     context.drawImage(scoreDisplayNums, score.hundredsFrame*score.numSize, 0, score.numSize, score.numSize,
         score.width, canvas.height-score.height, score.numSize, score.numSize);
+
+    if (iFrames > 0) iFrames -= 1;
+
+    if (player.health === 0) {
+        context.drawImage(deathScreen, 0, 0, 368, 64,
+            canvas.width/2-184, canvas.height/2-32, 368, 64)
+        stop();
+        return;
+    }
 }
 
 
@@ -974,11 +983,11 @@ function stop(outcome_txt) {
     window.removeEventListener("keydown", activate, false);
     window.cancelAnimationFrame(request_id);
 
-    let play = document.querySelector("#play > a");
-    play.innerHTML = "Play Again";
+    // let play = document.querySelector("#play > a");
+    // play.innerHTML = "Play Again";
 
-    let outcome_element = document.querySelector("#outcome");
-    outcome_element.innerHTML = outcome_txt;
+    // let outcome_element = document.querySelector("#outcome");
+    // outcome_element.innerHTML = outcome_txt;
 }
 
 function randint(min, max) {
