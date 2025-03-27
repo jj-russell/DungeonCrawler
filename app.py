@@ -28,11 +28,12 @@ def login_required(view):
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
-    return render_template("base.html")
+    return render_template("index.html")
 
 @app.route("/game", methods=["GET", "POST"])
+@login_required
 def game():
-    return render_template("index.html")
+    return render_template("game.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -56,7 +57,7 @@ def register():
             db.commit()
             return redirect(url_for("index"))
 
-    return render_template("register.html", form=form, title="Register")
+    return render_template("register.html", form=form)
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
