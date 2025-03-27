@@ -25,15 +25,13 @@ def login_required(view):
         return view(*args, **kwargs)
     return wrapped_view
 
-def clear_session():
-    for key in list(session.keys()):
-        if key not in ['defaults', 'priority_ids']:
-            session.pop(key)
-    session.modified = True
-
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def index():
+    return render_template("base.html")
+
+@app.route("/game", methods=["GET", "POST"])
+def game():
     return render_template("index.html")
 
 @app.route("/register", methods=["GET", "POST"])
