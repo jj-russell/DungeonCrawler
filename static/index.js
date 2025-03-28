@@ -55,7 +55,7 @@ let swordAnimation = {
 }
 
 let projectiles = [];
-let projXChange = 8; let projYChange = 8;
+let projectileSpeed = 8;
 let totalProjectiles = 0;
 
 let playerHitbox = {
@@ -135,13 +135,13 @@ let enemies = [];
 
 let enemyInfo = {
     "skeleton" : {
-        "amount": 5,
+        "amount": 0,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "melee"
     },
     "mage" : {
-        "amount": 20,
+        "amount": 1,
         "maxHealth": 2,
         "canKnockback": true,
         "attackType": "range",
@@ -773,12 +773,20 @@ function handleProjectiles() {
         }
         
 
-        let hitbox = {
+        // let hitbox = {
+        //     x: p.x,
+        //     y: p.y +p.height/4,
+        //     width: p.width,
+        //     height: p.height/2
+        // }
+
+        let projectileHitbox = {
             x: p.x,
-            y: p.y +p.height/4,
+            y: p.y,
             width: p.width,
-            height: p.height/2
+            height: p.height
         }
+
         p.frameX = (p.frameX + 1) % 8;
         
         if (! p.hasFired) {
@@ -789,50 +797,70 @@ function handleProjectiles() {
         }
 
         // regular projectile path
-        p.x += p.dx * projXChange
-        p.y += p.dy * projYChange
+        p.x += p.dx * projectileSpeed
+        p.y += p.dy * projectileSpeed
 
         if (-0.25 < p.dx && p.dx < 0.25) {
             if (p.dy > 0.9) { // down
                 p.frameY = 6;
+                projectileHitbox.y += projectileHitbox.height/3;
             }
             else { // up
                 p.frameY = 2;
+                projectileHitbox.y += projectileHitbox.height/6;
             }
+            projectileHitbox.x = p.x +p.width/3;
+            projectileHitbox.width = p.width/3;
+            projectileHitbox.height /= 2;
         }
         else if (-0.25 < p.dy && p.dy < 0.25) {
             if (p.dx > 0.9) { // right
                 p.frameY = 4;
+                projectileHitbox.x += projectileHitbox.width/2;
             }
             else { // left
                 p.frameY = 0;
             }
+            projectileHitbox.y = p.y +p.height/3;
+            projectileHitbox.height = p.height/3;
+            projectileHitbox.width /= 2;
         }
         else if (p.dx < -0.25) {
             if (p.dy > 0.25) { // bottom left
                 p.frameY = 7;
+                projectileHitbox.y = p.y + p.height/2.5;
             }
             else { // top left
                 p.frameY = 1;
+                projectileHitbox.y = p.y + p.height/4;
             }
+            projectileHitbox.x = p.x + 8;
+            projectileHitbox.height = p.height/3;
+            projectileHitbox.width /= 2;
         }
         else if (p.dx > -0.25) {
             if (p.dy > 0.25) { // bottom right
                 p.frameY = 5;
+                projectileHitbox.y = p.y + p.height/2.5;
             }
             else { // top right
                 p.frameY = 3;
+                projectileHitbox.y = p.y + p.height/4;
             }
+            projectileHitbox.x = p.x + 24;
+            projectileHitbox.height = p.height/3;
+            projectileHitbox.width /= 2;
         }
 
-        if (collides(playerHitbox, p)) {
+        if (collides(playerHitbox, projectileHitbox)) {
             if (iFrames === 0) {
                 takeDamage();
             }
         }
         
-        // projectile reaches the age 
-        if ((hitbox.y <= 0) || (hitbox.x <= 0) || (hitbox.y + hitbox.height >= canvas.height) || (hitbox.x + hitbox.width >= canvas.width)) {
+        // projectile reaches the edge 
+        if ((projectileHitbox.y <= 0) || (projectileHitbox.y + projectileHitbox.height >= canvas.height) || 
+            (projectileHitbox.x <= 0) || (projectileHitbox.x + projectileHitbox.width >= canvas.width)) {
             for (let e of enemies) {
                 // relate projectile to the enemy that fired it, delay between each fire, can't fire while moving
                 if (e.id === p.id && p.delay === 0 && !(e.moveUp || e.moveLeft || e.moveDown || e.moveRight)) {
