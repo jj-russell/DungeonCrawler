@@ -7,9 +7,9 @@ let then = Date.now();
 let request_id;
 
 let background = [
-    [32, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [64, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 66],
+    [128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 149],
+    [139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 149],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -168,7 +168,7 @@ let enemyInfo = {
         "attackType": "melee"
     },
     "mage" : {
-        "amount": 1,
+        "amount": 0,
         "maxHealth": 2,
         "canKnockback": true,
         "attackType": "range",
@@ -250,7 +250,7 @@ function init() {
         {"var": scoreDisplay, "url": "../static/images/stats/SCORE_DISPLAY.png"},
         {"var": scoreDisplayNums, "url": "../static/images/stats/SCORE_DISPLAY_NUMS.png"},
         {"var": deathScreen, "url": "../static/images/stats/DEATH_SCREEN.png"},
-        {"var": backgroundImage, "url": "../static/images/tileset/TX Tileset Grass.png"},
+        {"var": backgroundImage, "url": "../static/images/tiles.png"},
     ], draw)
 
     draw();
