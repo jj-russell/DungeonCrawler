@@ -15,6 +15,7 @@ damage numbers
 teleporting enemy (use handleFood function as base)
 dashing enemy, dashing player
 be able to attack projectiles
+once player goes past certain area the enemies get up
 
 DONE
 
