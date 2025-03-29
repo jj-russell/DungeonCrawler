@@ -50,6 +50,8 @@ let player = {
     isAttacking: false,
     isSprinting: false,
     isKilling: false,
+    isHit: false,
+    hitFrameCounter: 0,
 }
 
 let healthBar = {
@@ -118,6 +120,8 @@ let scoreDisplay = new Image();
 let scoreDisplayNums = new Image();
 let deathScreen = new Image();
 
+let damageImage = new Image();
+
 let playerWalk = new Image();
 let playerSlash = new Image();
 let playerHealthBarImage = new Image();
@@ -162,7 +166,7 @@ let enemies = [];
 
 let enemyInfo = {
     "skeleton" : {
-        "amount": 0,
+        "amount": 10,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "melee"
@@ -197,6 +201,11 @@ let enemyHealthBar = {
     frame: 10
 }
 
+// let damageNums = {
+//     takeDmgFrame: 0,
+//     giveDmgFrame: 0,
+// }
+
 let enemyId = 0;
 
 let moveLeft, moveRight, moveUp, moveDown;
@@ -210,7 +219,6 @@ let clickY = 0;
 let hasNewClick = false;
 
 let projectileDelay = 60; 
-
 
 document.addEventListener("DOMContentLoaded", init, false);
 
@@ -226,8 +234,8 @@ function init() {
         event.preventDefault();
     });
 
-    player.x = canvas.width-96
-    player.y = canvas.height-192
+    player.x = 64
+    player.y = 64
 
     load_assets([
         {"var": playerWalk, "url": "../static/images/player_animations/CHARACTER_WALK.png"},
@@ -251,8 +259,9 @@ function init() {
         {"var": scoreDisplayNums, "url": "../static/images/stats/SCORE_DISPLAY_NUMS.png"},
         {"var": deathScreen, "url": "../static/images/stats/DEATH_SCREEN.png"},
         {"var": backgroundImage, "url": "../static/images/tiles.png"},
+        {"var": damageImage, "url": "../static/images/stats/DMG_NUMS.png"},
     ], draw)
-
+    
     draw();
 }
 
@@ -291,8 +300,14 @@ function draw() {
         context.drawImage(playerWalk, player.frameX*player.width, player.frameY*player.height, player.width, player.height,
                         player.x, player.y, player.width, player.height);
     }
-
+    
     handleAttacking();
+    for (let e of enemies) {
+        if (e.isHit) {
+            context.drawImage(damageImage, 0, 0, 24, 16,
+                e.x+e.width/3, e.y-16, 24, 16)
+        }
+    }
 
     handleEnemyAttacking();
 
@@ -324,19 +339,19 @@ function movePlayer() {
     }
 
     if ( !(moveLeft && moveRight) || !(moveUp && moveDown)) {
-        if (moveUp && !(playerHitbox.y === 0)) {
+        if (moveUp && !(playerHitbox.y <= 52)) {
             player.y -= player.yChange;
             player.frameY = 0;
         }
-        if (moveLeft && !(playerHitbox.x === 0)) {
+        if (moveLeft && !(playerHitbox.x <= 32)) {
             player.x -= player.xChange;
             player.frameY = 1;
         }
-        if (moveDown && !(playerHitbox.y + playerHitbox.width >= canvas.height)) {
+        if (moveDown && !(playerHitbox.y + playerHitbox.width >= canvas.height-152)) {
             player.y += player.yChange;
             player.frameY = 2;
         }
-        if (moveRight && !(playerHitbox.x + playerHitbox.width >= canvas.width)) {
+        if (moveRight && !(playerHitbox.x + playerHitbox.width >= canvas.width-32)) {
             player.x += player.xChange;
             player.frameY = 3;
         }
@@ -497,17 +512,17 @@ function handleAttacking() {
                     }
                     
                     // prevent enemies from being knocked out of bounds
-                    if (e.x + enemyHitbox.width >= canvas.width) { // right border
-                        e.x = canvas.width - enemyHitbox.width;
+                    if (e.x + enemyHitbox.width >= canvas.width-32) { // right border
+                        e.x = canvas.width -32 - enemyHitbox.width;
                     }
-                    else if (e.x + enemyHitbox.width/2 <= 0) { // left border
-                        e.x = -enemyHitbox.width/2;
+                    else if (e.x + enemyHitbox.width/2 <= 32) { // left border
+                        e.x = 32-enemyHitbox.width/2;
                     }
-                    else if (e.y + enemyHitbox.height >= canvas.height) { // bottom border
-                        e.y = canvas.height - enemyHitbox.height;
+                    else if (e.y + enemyHitbox.height >= canvas.height-152) { // bottom border
+                        e.y = canvas.height -152 - enemyHitbox.height;
                     }
-                    else if (e.y + enemyHitbox.height/2 <= 0) { // top border
-                        e.y = -enemyHitbox.height/2;
+                    else if (e.y + enemyHitbox.height/2 <= 52) { // top border
+                        e.y = 52-enemyHitbox.height/2;
                     }
                 }
             }
@@ -599,8 +614,8 @@ function createEnemies() {
                     totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
                 }
                 
-                e.x = randint(0, canvas.width-e.width)
-                e.y = randint(0, canvas.height-e.width)
+                e.x = randint(256, canvas.width-32-e.width)
+                e.y = randint(52, canvas.height-152-e.height)
 
                 // convert co-ordinates to multiples of 4
                 e.x = (e.x + (4 - e.x%4))
@@ -937,6 +952,7 @@ function takeDamage() {
         iFrames = iFrameMax;
         player.health--;
         healthBar.frame ++;
+        player.isHit = true;
     }
 }
 
@@ -946,6 +962,19 @@ function playerStats() {
 
     context.drawImage(playerStaminaBarImage, 0, staminaBar.frame*staminaBar.height, staminaBar.width, staminaBar.height,
         player.x, player.y, staminaBar.width, staminaBar.height);
+
+    if (player.isHit) {
+        context.drawImage(damageImage, 0, 0, 24, 16,
+            player.x+player.width/3, player.y-32, 24, 16);
+    }
+    
+    if (player.hitFrameCounter === 15) {
+        player.isHit = false;
+        player.hitFrameCounter = 0;
+    }
+    else if (player.isHit) {
+        player.hitFrameCounter ++;
+    }
     
     // "score:"
     context.drawImage(scoreDisplay, 0, 0, score.width, score.height,

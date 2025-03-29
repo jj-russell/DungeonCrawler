@@ -17,6 +17,8 @@ dashing enemy, dashing player
 be able to attack projectiles
 once player goes past certain area the enemies get up
 
+FIX BORDERS (canvas.width - 96, canvas.height - 152)
+
 DONE
 
 score 
