@@ -320,9 +320,9 @@ function draw() {
 
     if (showCurrentItem) {
         context.drawImage(toolbarImage, toolbar.frameX*32, toolbar.frameY*32, toolbar.width, toolbar.height,
-            player.x+player.width/4, player.y+player.height, toolbar.width, toolbar.height)
+            player.x+player.width/4, player.y+player.height, toolbar.width, toolbar.height);
+        showCurrentItemCounter ++;
     }
-    showCurrentItemCounter ++;
     if (showCurrentItemCounter == 30) {
         showCurrentItem = false;
         showCurrentItemCounter = 0;
@@ -621,9 +621,6 @@ function handleAttacking() {
         }
         
         else if (inventory[current_item] === "potion") {
-            if (player.isHealing) {
-                moveUp = moveLeft = moveDown = moveRight = false;
-            }
             // moveUp = moveLeft = moveDown = moveRight = false;
             context.drawImage(playerWalk, player.frameX*player.width, player.frameY*player.height, player.width, player.height,
                 player.x, player.y, player.width, player.height);
@@ -632,12 +629,17 @@ function handleAttacking() {
                 healthBar.frame --;
                 player.isHealing = true;
                 toolbar.frameY --;
+                
             }
             if (player.isHealing) {
+                moveUp = moveLeft = moveDown = moveRight = false;
                 if (healthGainFrameCounter < 20) {
                     context.drawImage(healthGainImage, 0, 0, 24, 12,
                         player.x+player.width/3, player.y-32, 24, 12)
                     healthGainFrameCounter ++;
+                    
+                    context.drawImage(toolbarImage, 64, toolbar.frameY*32, toolbar.width, toolbar.height,
+                        player.x+player.width/4, player.y+player.height, toolbar.width, toolbar.height);
                 }
                 else {
                     player.isHealing = false;
