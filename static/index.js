@@ -147,17 +147,24 @@ let enemyHealthBarImage = new Image();
 let skeletonWalk = new Image();
 let skeletonSlash = new Image();
 let skeletonDead = new Image();
+let archerWalk = new Image();
+let archerAttack = new Image();
+let archerDead = new Image();
 let mageWalk = new Image();
 let mageCast = new Image();
 let mageDead = new Image();
 
 let fireball = new Image();
 let icicle = new Image();
+let arrowImage = new Image();
 
 let map = new Image();
 
 let xChange, yChange, squareSize;
 xChange = yChange = squareSize = 20;
+
+let bowFrame = 0;
+let bowFrameCounter = 0;
 
 // let food = []; 
 // let foodMultiplier = 5;
@@ -177,17 +184,26 @@ let enemies = [];
 
 let enemyInfo = {
     "skeleton" : {
-        "amount": 10,
+        "amount": 0,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "melee"
     },
-    "mage" : {
-        "amount": 0,
-        "maxHealth": 2,
+    "archer" : {
+        "amount": 1,
+        "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
-        "maxProjectiles": 1
+        "maxProjectiles": 1,
+        "projectile": arrowImage
+    },
+    "mage" : {
+        "amount": 1,
+        "maxHealth": 1,
+        "canKnockback": true,
+        "attackType": "range",
+        "maxProjectiles": 1,
+        "projectile": fireball
     },
 }
 
@@ -198,6 +214,11 @@ let enemyImages = {
         "walk" : skeletonWalk,
         "slash" : skeletonSlash,
         "dead" : skeletonDead,
+    },
+    "archer":{
+        "walk" : archerWalk,
+        "slash" : archerAttack,
+        "dead" : archerDead,
     },
     "mage":{
         "walk" : mageWalk,
@@ -270,9 +291,13 @@ function init() {
         {"var": skeletonWalk, "url": "../static/images/enemies/skeleton/SKELETON_WALK.png"},
         {"var": skeletonSlash, "url": "../static/images/enemies/skeleton/SKELETON_SLASH.png"},
         {"var": skeletonDead, "url": "../static/images/enemies/skeleton/SKELETON_DEAD.png"},
+        {"var": archerWalk, "url": "../static/images/enemies/archer/ARCHER_WALK.png"},
+        {"var": archerAttack, "url": "../static/images/enemies/archer/ARCHER_ATTACK.png"},
+        {"var": archerDead, "url": "../static/images/enemies/archer/ARCHER_DEAD.png"},
         {"var": mageWalk, "url": "../static/images/enemies/mage/MAGE_WALK.png"},
         {"var": mageCast, "url": "../static/images/enemies/mage/MAGE_CAST.png"},
         {"var": mageDead, "url": "../static/images/enemies/mage/MAGE_DEAD.png"},
+        {"var": arrowImage, "url": "../static/images/enemies/archer/ARROW.png"},
         {"var": fireball, "url": "../static/images/enemies/mage/FIREBALL.png"},
         {"var": icicle, "url": "../static/images/enemies/mage/ICICLE.png"},
         {"var": playerHealthBarImage, "url": "../static/images/stats/PLAYER_HEALTHBAR.png"},
@@ -328,7 +353,6 @@ function draw() {
         showCurrentItemCounter = 0;
     }
 
-
     if (enemiesPerLevel > 0 ) {
         createEnemies();
     }
@@ -362,27 +386,29 @@ function draw() {
 }
 
 function handleInventory(event) {
-    let key = event.key;
-    // cycling through inventory
-    if (key === "e" || key === "E") {
-        showCurrentItem = true;
-        if (current_item === inventory.length-1) {
-            current_item = 0;
+    if (! player.isAttacking) {
+        let key = event.key;
+        // cycling through inventory
+        if (key === "e" || key === "E") {
+            showCurrentItem = true;
+            if (current_item === inventory.length-1) {
+                current_item = 0;
+            }
+            else {
+                current_item ++;
+            }
+            toolbar.frameX = current_item;
         }
-        else {
-            current_item ++;
+        else if (key === "q" || key === "Q") {
+            showCurrentItem = true;
+            if (current_item === 0) {
+                current_item = inventory.length - 1;
+            }
+            else {
+                current_item --;
+            }
+            toolbar.frameX = current_item;
         }
-        toolbar.frameX = current_item;
-    }
-    else if (key === "q" || key === "Q") {
-        showCurrentItem = true;
-        if (current_item === 0) {
-            current_item = inventory.length - 1;
-        }
-        else {
-            current_item --;
-        }
-        toolbar.frameX = current_item;
     }
 }
 
@@ -462,8 +488,7 @@ function movePlayer() {
         }
     }
 }
-let bowFrame = 0;
-let bowFrameCounter = 0;
+
 function handleAttacking() {
     window.addEventListener("click", attack, false);
     if (player.isAttacking) {
@@ -617,7 +642,6 @@ function handleAttacking() {
                 bowFrameCounter = 0;
             }
             
-
         }
         
         else if (inventory[current_item] === "potion") {
@@ -949,8 +973,9 @@ function handleEnemyAttacking() {
 
 function handleProjectiles() {
     for (let p of projectiles) {
+        console.log(p.delay)
         if (p.delay != 0) {
-            p.delay --
+            p.delay --;
         }
 
         let projectileHitbox = {
@@ -959,8 +984,6 @@ function handleProjectiles() {
             width: p.width,
             height: p.height
         }
-
-        p.frameX = (p.frameX + 1) % 8;
         
         if (! p.hasFired) {
             let direction = calculateDirection(p.x, p.y, player.x, player.y);
@@ -1032,11 +1055,11 @@ function handleProjectiles() {
         }
         
         // projectile reaches the edge 
-        if ((projectileHitbox.y <= 0) || (projectileHitbox.y + projectileHitbox.height >= canvas.height) || 
-            (projectileHitbox.x <= 0) || (projectileHitbox.x + projectileHitbox.width >= canvas.width)) {
+        if ((projectileHitbox.y <= 52) || (projectileHitbox.y + projectileHitbox.height >= canvas.height-152) || 
+            (projectileHitbox.x <= 32) || (projectileHitbox.x + projectileHitbox.width >= canvas.width-32)) {
             for (let e of enemies) {
                 // relate projectile to the enemy that fired it, delay between each fire, can't fire while moving
-                if (e.id === p.id && p.delay === 0 && !(e.moveUp || e.moveLeft || e.moveDown || e.moveRight)) {
+                if (e.id === p.id && p.delay && !(e.moveUp || e.moveLeft || e.moveDown || e.moveRight)) {
                     p.x = e.x;
                     p.y = e.y;
                     p.hasFired = false;
@@ -1046,9 +1069,23 @@ function handleProjectiles() {
             }
         }
         
-        context.drawImage(fireball, 
-            p.frameX*p.width, p.frameY*p.height, p.width, p.height,
-            p.x, p.y, p.width, p.height)
+        for (let e of enemies) {
+            if (e.id === p.id) {
+                if (e.type === "mage") {
+                    p.frameX = (p.frameX + 1) % 8;
+                    context.drawImage(enemyInfo[e.type]["projectile"], 
+                        p.frameX*p.width, p.frameY*p.height, p.width, p.height,
+                        p.x, p.y, p.width, p.height)
+                }
+                else if (e.type === "archer") {
+                    p.frameX = (p.frameX + 1) % 2;
+                    context.drawImage(enemyInfo[e.type]["projectile"], 
+                        p.frameX*p.width, p.frameY*p.height, p.width, p.height,
+                        p.x, p.y, p.width, p.height)
+                }
+                break;
+            }
+        } 
     }
 }
 
