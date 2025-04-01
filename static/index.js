@@ -195,15 +195,17 @@ let enemyInfo = {
         "canKnockback": true,
         "attackType": "range",
         "maxProjectiles": 1,
-        "projectile": arrowImage
+        "projectile": arrowImage,
+        "attackAnimationFrames": 12,
     },
     "mage" : {
-        "amount": 1,
+        "amount": 0,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
         "maxProjectiles": 1,
-        "projectile": fireball
+        "projectile": fireball,
+        "attackAnimationFrames": 6,
     },
 }
 
@@ -961,7 +963,8 @@ function handleEnemyAttacking() {
                     e.attackCounter = 0;
                     e.frameX++;
                     
-                    if (e.frameX === 6) {
+                    if (e.frameX === enemyInfo[e.type]["attackAnimationFrames"]) {
+                        e.canFire = true;
                         e.isAttacking = false;
                         e.frameX = 0;
                     }
@@ -973,7 +976,6 @@ function handleEnemyAttacking() {
 
 function handleProjectiles() {
     for (let p of projectiles) {
-        console.log(p.delay)
         if (p.delay != 0) {
             p.delay --;
         }
