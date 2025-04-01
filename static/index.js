@@ -197,15 +197,17 @@ let enemyInfo = {
         "maxProjectiles": 1,
         "projectile": arrowImage,
         "attackAnimationFrames": 12,
+        "projectileAnimationFrames": 1,
     },
     "mage" : {
-        "amount": 0,
+        "amount": 1,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
         "maxProjectiles": 1,
         "projectile": fireball,
         "attackAnimationFrames": 6,
+        "projectileAnimationFrames": 7,
     },
 }
 
@@ -1061,7 +1063,7 @@ function handleProjectiles() {
             (projectileHitbox.x <= 32) || (projectileHitbox.x + projectileHitbox.width >= canvas.width-32)) {
             for (let e of enemies) {
                 // relate projectile to the enemy that fired it, delay between each fire, can't fire while moving
-                if (e.id === p.id && p.delay && !(e.moveUp || e.moveLeft || e.moveDown || e.moveRight)) {
+                if (e.id === p.id && p.delay === 0 && !(e.moveUp || e.moveLeft || e.moveDown || e.moveRight)) {
                     p.x = e.x;
                     p.y = e.y;
                     p.hasFired = false;
@@ -1073,18 +1075,10 @@ function handleProjectiles() {
         
         for (let e of enemies) {
             if (e.id === p.id) {
-                if (e.type === "mage") {
-                    p.frameX = (p.frameX + 1) % 8;
+                    p.frameX = (p.frameX + 1) % enemyInfo[e.type]["projectileAnimationFrames"];
                     context.drawImage(enemyInfo[e.type]["projectile"], 
                         p.frameX*p.width, p.frameY*p.height, p.width, p.height,
                         p.x, p.y, p.width, p.height)
-                }
-                else if (e.type === "archer") {
-                    p.frameX = (p.frameX + 1) % 2;
-                    context.drawImage(enemyInfo[e.type]["projectile"], 
-                        p.frameX*p.width, p.frameY*p.height, p.width, p.height,
-                        p.x, p.y, p.width, p.height)
-                }
                 break;
             }
         } 
