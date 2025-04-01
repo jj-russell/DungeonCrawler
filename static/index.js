@@ -496,6 +496,7 @@ function movePlayer() {
 function handleAttacking() {
     window.addEventListener("click", attack, false);
     if (player.isAttacking) {
+        player.isSprinting = false;
         if (inventory[current_item] === "sword") {
             moveUp = moveLeft = moveDown = moveRight = false;
             let swordHitbox = {
@@ -741,6 +742,8 @@ function createEnemies() {
                     yChange: 4,
                     frameX: 0,
                     frameY: 0,
+                    attackFrameX: 0,
+                    attackFrameY: 0,
                     moveUp: false,
                     moveLeft: false,
                     moveDown: false,
@@ -761,7 +764,7 @@ function createEnemies() {
                 enemyId ++;
 
                 if (enemyInfo[e.type]["attackType"] === "range") {
-                    e.canFire = true;
+                    e.canFire = false;
                     e.projectileCounter = 0
                     totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
                 }
@@ -806,7 +809,7 @@ function drawEnemies() {
                             e.x, e.y, e.width, e.height);
 
         } else if (e.isAttacking) {
-            context.drawImage(enemyImages[e.type]["slash"], e.frameX*e.width, e.frameY*e.height, e.width, e.height,
+            context.drawImage(enemyImages[e.type]["slash"], e.attackFrameX*e.width, e.frameY*e.height, e.width, e.height,
                             e.x, e.y, e.width, e.height);
         } else {
             context.drawImage(enemyImages[e.type]["walk"], e.frameX*e.width, e.frameY*e.height, e.width, e.height,
@@ -826,6 +829,10 @@ function moveEnemies() {
         if (e.isAttacking || e.isDying || e.isSpawning) {
             continue;
         }
+
+        // e.attackFrameX = 0;
+        // e.canFire = false;
+
         // if enemy is next to the player stop and attack
         let distanceY = Math.abs(player.y - e.y);
         let distanceX = Math.abs(player.x - e.x)
@@ -844,7 +851,7 @@ function moveEnemies() {
             }
         }
         else if (enemyInfo[e.type]["attackType"] === "range") {
-            if (distanceX <= player.width*4 && distanceY <= player.height*2) {
+            if ((distanceX <= player.width*4 && distanceY <= player.height*2)) {
                 e.isAttacking = true;
                 e.moveUp = e.moveLeft = e.moveDown = e.moveRight = false;
                 e.frameX = 0;
@@ -929,22 +936,35 @@ function handleEnemyAttacking() {
                 e.attackCounter++;
                 if (e.attackCounter >= 5) {
                     e.attackCounter = 0;
-                    e.frameX++;
+                    e.attackFrameX++;
                     
-                    if (e.frameX === 6 && collides(playerHitbox, enemySwordHitbox)) {
+                    if (e.attackFrameX === 6 && collides(playerHitbox, enemySwordHitbox)) {
                         if (iFrames === 0 && !e.isDying) {
                             takeDamage();
                         }
                     }
                     
-                    if (e.frameX === 6) {
+                    if (e.attackFrameX === 6) {
                         e.isAttacking = false;
-                        e.frameX = 0;
+                        e.attackFrameX = 0;
                     }
                 }
             }
             else if (enemyInfo[e.type]["attackType"] === "range") {
-                if ((projectiles.length < totalProjectiles) && (e.projectileCounter < enemyInfo[e.type]["maxProjectiles"])) {
+                e.attackCounter++;
+                if (e.attackCounter >= 5) {
+                    e.attackCounter = 0;
+                    e.attackFrameX++;
+                    
+                    if (e.attackFrameX === enemyInfo[e.type]["attackAnimationFrames"]) {
+                        e.canFire = true;
+                        e.isAttacking = false;
+                        e.attackFrameX = 0;
+                    }
+                }
+                
+                if ((projectiles.length < totalProjectiles) 
+                    && (e.projectileCounter < enemyInfo[e.type]["maxProjectiles"]) && e.canFire) {
                     let p = {
                         id: e.id,
                         hasFired: false,
@@ -959,18 +979,6 @@ function handleEnemyAttacking() {
                     projectiles.push(p);
                     e.projectileCounter ++;
                 }
-
-                e.attackCounter++;
-                if (e.attackCounter >= 5) {
-                    e.attackCounter = 0;
-                    e.frameX++;
-                    
-                    if (e.frameX === enemyInfo[e.type]["attackAnimationFrames"]) {
-                        e.canFire = true;
-                        e.isAttacking = false;
-                        e.frameX = 0;
-                    }
-                }
             }
         }
     }
@@ -978,110 +986,116 @@ function handleEnemyAttacking() {
 
 function handleProjectiles() {
     for (let p of projectiles) {
-        if (p.delay != 0) {
-            p.delay --;
-        }
+        for (let e of enemies) {
+            if (p.id === e.id && e.canFire) {
+                if (p.delay != 0) {
+                    p.delay --;
+                }
 
-        let projectileHitbox = {
-            x: p.x,
-            y: p.y,
-            width: p.width,
-            height: p.height
-        }
-        
-        if (! p.hasFired) {
-            let direction = calculateDirection(p.x, p.y, player.x, player.y);
-            p.dx = direction.dx
-            p.dy = direction.dy
-            p.hasFired = true;
-        }
+                let projectileHitbox = {
+                    x: p.x,
+                    y: p.y,
+                    width: p.width,
+                    height: p.height
+                }
+                
+                if (! p.hasFired) {
+                    let direction = calculateDirection(p.x, p.y, player.x, player.y);
+                    p.dx = direction.dx
+                    p.dy = direction.dy
+                    p.hasFired = true;
+                }
 
-        // regular projectile path
-        p.x += p.dx * projectileSpeed
-        p.y += p.dy * projectileSpeed
+                // regular projectile path
+                p.x += p.dx * projectileSpeed
+                p.y += p.dy * projectileSpeed
 
-        if (-0.25 < p.dx && p.dx < 0.25) {
-            if (p.dy > 0.9) { // down
-                p.frameY = 6;
-                projectileHitbox.y += projectileHitbox.height/3;
-            }
-            else { // up
-                p.frameY = 2;
-                projectileHitbox.y += projectileHitbox.height/6;
-            }
-            projectileHitbox.x = p.x +p.width/3;
-            projectileHitbox.width = p.width/3;
-            projectileHitbox.height /= 2;
-        }
-        else if (-0.25 < p.dy && p.dy < 0.25) {
-            if (p.dx > 0.9) { // right
-                p.frameY = 4;
-                projectileHitbox.x += projectileHitbox.width/2;
-            }
-            else { // left
-                p.frameY = 0;
-            }
-            projectileHitbox.y = p.y +p.height/3;
-            projectileHitbox.height = p.height/3;
-            projectileHitbox.width /= 2;
-        }
-        else if (p.dx < -0.25) {
-            if (p.dy > 0.25) { // bottom left
-                p.frameY = 7;
-                projectileHitbox.y = p.y + p.height/2.5;
-            }
-            else { // top left
-                p.frameY = 1;
-                projectileHitbox.y = p.y + p.height/4;
-            }
-            projectileHitbox.x = p.x + 8;
-            projectileHitbox.height = p.height/3;
-            projectileHitbox.width /= 2;
-        }
-        else if (p.dx > -0.25) {
-            if (p.dy > 0.25) { // bottom right
-                p.frameY = 5;
-                projectileHitbox.y = p.y + p.height/2.5;
-            }
-            else { // top right
-                p.frameY = 3;
-                projectileHitbox.y = p.y + p.height/4;
-            }
-            projectileHitbox.x = p.x + 24;
-            projectileHitbox.height = p.height/3;
-            projectileHitbox.width /= 2;
-        }
+                if (-0.25 < p.dx && p.dx < 0.25) {
+                    if (p.dy > 0.9) { // down
+                        p.frameY = 6;
+                        projectileHitbox.y += projectileHitbox.height/3;
+                    }
+                    else { // up
+                        p.frameY = 2;
+                        projectileHitbox.y += projectileHitbox.height/6;
+                    }
+                    projectileHitbox.x = p.x +p.width/3;
+                    projectileHitbox.width = p.width/3;
+                    projectileHitbox.height /= 2;
+                }
+                else if (-0.25 < p.dy && p.dy < 0.25) {
+                    if (p.dx > 0.9) { // right
+                        p.frameY = 4;
+                        projectileHitbox.x += projectileHitbox.width/2;
+                    }
+                    else { // left
+                        p.frameY = 0;
+                    }
+                    projectileHitbox.y = p.y +p.height/3;
+                    projectileHitbox.height = p.height/3;
+                    projectileHitbox.width /= 2;
+                }
+                else if (p.dx < -0.25) {
+                    if (p.dy > 0.25) { // bottom left
+                        p.frameY = 7;
+                        projectileHitbox.y = p.y + p.height/2.5;
+                    }
+                    else { // top left
+                        p.frameY = 1;
+                        projectileHitbox.y = p.y + p.height/4;
+                    }
+                    projectileHitbox.x = p.x + 8;
+                    projectileHitbox.height = p.height/3;
+                    projectileHitbox.width /= 2;
+                }
+                else if (p.dx > -0.25) {
+                    if (p.dy > 0.25) { // bottom right
+                        p.frameY = 5;
+                        projectileHitbox.y = p.y + p.height/2.5;
+                    }
+                    else { // top right
+                        p.frameY = 3;
+                        projectileHitbox.y = p.y + p.height/4;
+                    }
+                    projectileHitbox.x = p.x + 24;
+                    projectileHitbox.height = p.height/3;
+                    projectileHitbox.width /= 2;
+                }
 
-        if (collides(playerHitbox, projectileHitbox)) {
-            if (iFrames === 0) {
-                takeDamage();
-            }
-        }
-        
-        // projectile reaches the edge 
-        if ((projectileHitbox.y <= 52) || (projectileHitbox.y + projectileHitbox.height >= canvas.height-152) || 
-            (projectileHitbox.x <= 32) || (projectileHitbox.x + projectileHitbox.width >= canvas.width-32)) {
-            for (let e of enemies) {
-                // relate projectile to the enemy that fired it, delay between each fire, can't fire while moving
-                if (e.id === p.id && p.delay === 0 && !(e.moveUp || e.moveLeft || e.moveDown || e.moveRight)) {
-                    p.x = e.x;
-                    p.y = e.y;
-                    p.hasFired = false;
-                    p.delay = projectileDelay
-                    break;
+                if (collides(playerHitbox, projectileHitbox)) {
+                    if (iFrames === 0) {
+                        takeDamage();
+                    }
+                }
+                
+                // projectile reaches the edge 
+                if ((projectileHitbox.y <= 52) || (projectileHitbox.y + projectileHitbox.height >= canvas.height-152) || 
+                    (projectileHitbox.x <= 32) || (projectileHitbox.x + projectileHitbox.width >= canvas.width-32)) {
+                    for (let e of enemies) {
+                        // relate projectile to the enemy that fired it, delay between each fire, can't fire while moving
+                        if (e.id === p.id && p.delay === 0 && !(e.moveUp || e.moveLeft || e.moveDown || e.moveRight)) {
+                            p.x = e.x;
+                            p.y = e.y;
+                            p.hasFired = false;
+                            e.canFire = false;
+                            p.delay = projectileDelay
+                            break;
+                        }
+                    }
+                }
+                else {
+                    for (let e of enemies) {
+                        if (e.id === p.id) {
+                                p.frameX = (p.frameX + 1) % enemyInfo[e.type]["projectileAnimationFrames"];
+                                context.drawImage(enemyInfo[e.type]["projectile"], 
+                                    p.frameX*p.width, p.frameY*p.height, p.width, p.height,
+                                    p.x, p.y, p.width, p.height)
+                            break;
+                        }
+                    }
                 }
             }
         }
-        
-        for (let e of enemies) {
-            if (e.id === p.id) {
-                    p.frameX = (p.frameX + 1) % enemyInfo[e.type]["projectileAnimationFrames"];
-                    context.drawImage(enemyInfo[e.type]["projectile"], 
-                        p.frameX*p.width, p.frameY*p.height, p.width, p.height,
-                        p.x, p.y, p.width, p.height)
-                break;
-            }
-        } 
     }
 }
 
