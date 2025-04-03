@@ -190,24 +190,24 @@ let enemyInfo = {
         "attackType": "melee"
     },
     "archer" : {
-        "amount": 1,
+        "amount": 5,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
         "maxProjectiles": 1,
         "projectile": arrowImage,
-        "attackAnimationFrames": 12,
-        "projectileAnimationFrames": 1,
+        "attackAnimationFrames": 13,
+        "projectileAnimationFrames": 2,
     },
     "mage" : {
-        "amount": 1,
+        "amount": 0,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
         "maxProjectiles": 1,
         "projectile": fireball,
-        "attackAnimationFrames": 6,
-        "projectileAnimationFrames": 7,
+        "attackAnimationFrames": 7,
+        "projectileAnimationFrames": 8,
     },
 }
 
@@ -374,7 +374,6 @@ function draw() {
                 e.x+e.width/3, e.y-16, 24, 16)
         }
     }
-
     handleEnemyAttacking();
 
     drawEnemies();
@@ -387,6 +386,27 @@ function draw() {
 
     playerStats();
 
+}
+
+function outOfBounds(x, y) {
+    let leftBoundary = 32;
+    let rightBoundary = canvas.width-32;
+    let upBoundary = 52;
+    let downBoundary = canvas.height-132;
+    
+    if (x <= leftBoundary) {
+        return ["left", leftBoundary];
+    }
+    else if (x >= rightBoundary) {
+        return ["right", rightBoundary];
+    }
+    else if (y <= upBoundary) {
+        return ["up", upBoundary];
+    }
+    else if (y >= downBoundary) {
+        return ["down", downBoundary];
+    }
+    return "false";
 }
 
 function handleInventory(event) {
@@ -423,6 +443,10 @@ function movePlayer() {
         width: player.width/2, 
         height: player.height-12
     }
+    let x = playerHitbox.x
+    let y = playerHitbox.y
+    let w = playerHitbox.width
+    let h =playerHitbox.height
 
     if ((moveLeft || moveRight) && !(moveLeft && moveRight) || (moveUp || moveDown) && !(moveUp && moveDown)) {
         moveCounter ++
@@ -431,34 +455,34 @@ function movePlayer() {
             player.frameX = (player.frameX + 1) % 4;
         }
     }
-
-    if ( !(moveLeft && moveRight) || !(moveUp && moveDown)) {
-        if (moveUp && !(playerHitbox.y <= 52)) {
+    
+    if ( !(moveLeft && moveRight) && !(moveUp && moveDown)) {
+        if (moveUp && !(outOfBounds(x, y).includes("up"))) {
             player.y -= player.yChange;
             player.frameY = 0;
         }
-        if (moveLeft && !(playerHitbox.x <= 32)) {
+        if (moveLeft && !(outOfBounds(x, y).includes("left"))) {
             player.x -= player.xChange;
             player.frameY = 1;
         }
-        if (moveDown && !(playerHitbox.y + playerHitbox.width >= canvas.height-152)) {
+        if (moveDown && !(outOfBounds(x, y+h).includes("down"))) {
             player.y += player.yChange;
             player.frameY = 2;
         }
-        if (moveRight && !(playerHitbox.x + playerHitbox.width >= canvas.width-32)) {
+        if (moveRight && !(outOfBounds(x+w, y).includes("right"))) {
             player.x += player.xChange;
             player.frameY = 3;
         }
     }
-    
-    if (!(moveLeft || moveRight || moveUp || moveDown)) {
+
+    if (!(moveLeft || moveRight || moveUp || moveDown) || ((moveLeft && moveRight) || (moveUp && moveDown))) {
         player.frameX = 0;
     }
 
     if (player.isSprinting) {
         if (player.stamina > 0 && player.xChange < 12) {
-            player.xChange += 1;
-            player.yChange += 1;
+            player.xChange += 2;
+            player.yChange += 2;
             player.stamina --;
             if (player.stamina % frameInterval === 0 && staminaBar.frame < 5) {
                 staminaBar.frame ++
@@ -607,18 +631,21 @@ function handleAttacking() {
                             e.y -= 3*e.yChange;
                         }
                         
+                        let w = enemyHitbox.width;
+                        let h = enemyHitbox.height;
+
                         // prevent enemies from being knocked out of bounds
-                        if (e.x + enemyHitbox.width >= canvas.width-32) { // right border
-                            e.x = canvas.width -32 - enemyHitbox.width;
+                        if (outOfBounds(e.x+w, e.y).includes("right")) {
+                            e.x = outOfBounds(e.x+w, e.y)[1] - w
                         }
-                        else if (e.x + enemyHitbox.width/2 <= 32) { // left border
-                            e.x = 32-enemyHitbox.width/2;
+                        else if (outOfBounds(e.x+w/2, e.y).includes("left")) {
+                            e.x = outOfBounds(e.x+w/2, e.y)[1] - w/2;
                         }
-                        else if (e.y + enemyHitbox.height >= canvas.height-152) { // bottom border
-                            e.y = canvas.height -152 - enemyHitbox.height;
+                        else if (outOfBounds(e.x, e.y+h).includes("down")) {
+                            e.y = outOfBounds(e.x, e.y+h)[1] - h;
                         }
-                        else if (e.y + enemyHitbox.height/2 <= 52) { // top border
-                            e.y = 52-enemyHitbox.height/2;
+                        else if (outOfBounds(e.x, e.y+h/2).includes("up")) { // top border
+                            e.y = outOfBounds(e.x, e.y+h/2)[1] - h/3;
                         }
                     }
                 }
@@ -636,7 +663,7 @@ function handleAttacking() {
         else if (inventory[current_item] === "bow") {
             moveUp = moveLeft = moveDown = moveRight = false;
             if (bowFrameCounter === 0) {
-                bowFrame = (bowFrame +1) % 12;
+                bowFrame = (bowFrame +1) % 13;
                 bowFrameCounter = 2;
             }
             bowFrameCounter --;
@@ -685,17 +712,17 @@ function handleAttacking() {
     for (let i = enemies.length - 1; i >= 0; i--) {
         let e = enemies[i];
         if (e.isDying) {
+            // remove projectile associated with enemy
+            for (let p of projectiles) {
+                if (e.id === p.id) {
+                    projectiles.splice(projectiles.indexOf(p), 1)
+                }
+            }
             e.deathCounter++;
             if (e.deathCounter === 5) {
                 e.deathCounter = 0;
                 e.deathFrame++;
                 if (e.deathFrame === 6) {
-                    // remove projectile associated with enemy
-                    for (let p of projectiles) {
-                        if (e.id === p.id) {
-                            projectiles.splice(projectiles.indexOf(p), 1)
-                        }
-                    }
                     enemies.splice(i, 1);
                     if (enemyInfo[e.type]["attackType"] === "range"){
                         totalProjectiles -= enemyInfo[e.type]["maxProjectiles"];
@@ -1063,14 +1090,19 @@ function handleProjectiles() {
                 }
 
                 if (collides(playerHitbox, projectileHitbox)) {
-                    if (iFrames === 0) {
+                    if (iFrames === 0 && !e.isDying) {
                         takeDamage();
                     }
                 }
+                let x = projectileHitbox.x;
+                let y = projectileHitbox.y;
+                let w = projectileHitbox.width;
+                let h = projectileHitbox.height;
+
+                // projectile reaches the edge
                 
-                // projectile reaches the edge 
-                if ((projectileHitbox.y <= 52) || (projectileHitbox.y + projectileHitbox.height >= canvas.height-152) || 
-                    (projectileHitbox.x <= 32) || (projectileHitbox.x + projectileHitbox.width >= canvas.width-32)) {
+                if ((outOfBounds(x,y).includes("left")) || ((outOfBounds(x,y+h).includes("down"))) || 
+                    (outOfBounds(x,y).includes("up")) || ((outOfBounds(x+w,y).includes("right")))) {
                     for (let e of enemies) {
                         // relate projectile to the enemy that fired it, delay between each fire, can't fire while moving
                         if (e.id === p.id && p.delay === 0 && !(e.moveUp || e.moveLeft || e.moveDown || e.moveRight)) {
