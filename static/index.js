@@ -54,6 +54,7 @@ let player = {
     isHit: false,
     hitFrameCounter: 0,
     isHealing: false,
+    isCheating: false,
 }
 
 let inventory = ["sword", "bow", "potion"];
@@ -158,6 +159,9 @@ let fireball = new Image();
 let icicle = new Image();
 let arrowImage = new Image();
 
+let cheatImage = new Image();
+let cheatStatusImage = new Image();
+
 let map = new Image();
 
 let xChange, yChange, squareSize;
@@ -246,6 +250,8 @@ let toolbar = {
     frameY: maxPotionUses,
 }
 
+let cheatFrame = 0;
+
 // let damageNums = {
 //     takeDmgFrame: 0,
 //     giveDmgFrame: 0,
@@ -275,14 +281,15 @@ function init() {
     window.addEventListener("keydown", activate, false);
     window.addEventListener("keyup", deactivate, false);
     window.addEventListener("keydown", handleInventory, false);
+    window.addEventListener("keydown", enableCheats, false);
 
     // disable right click
     window.addEventListener("contextmenu", function(event) {
         event.preventDefault();
     });
 
-    player.x = 64
-    player.y = 64
+    player.x = 64;
+    player.y = 64;
 
     load_assets([
         {"var": playerWalk, "url": "../static/images/player_animations/PLAYER_WALK.png"},
@@ -314,6 +321,8 @@ function init() {
         {"var": damageImage, "url": "../static/images/stats/DMG_NUMS.png"},
         {"var": toolbarImage, "url": "../static/images/stats/TOOLBAR.png"},
         {"var": healthGainImage, "url": "../static/images/stats/HEALTH_GAIN.png"},
+        {"var": cheatImage, "url": "../static/images/stats/CHEAT.png"},
+        {"var": cheatStatusImage, "url": "../static/images/stats/CHEAT_STATUS.png"},
     ], draw)
     
     draw();
@@ -346,6 +355,12 @@ function draw() {
     }
     context.drawImage(toolbarImage, 0, toolbar.frameY*32, 96, 32,
         0, canvas.height-32, 96, 32)
+        
+    context.drawImage(cheatImage, 0, cheatFrame*32, 160, 32,
+        canvas.width/2-160, canvas.height-32, 160, 32)
+
+    context.drawImage(cheatStatusImage, 0, cheatFrame*32, 80, 32,
+        canvas.width/2, canvas.height-32, 80, 32)
 
     if (showCurrentItem) {
         context.drawImage(toolbarImage, toolbar.frameX*32, toolbar.frameY*32, toolbar.width, toolbar.height,
@@ -409,9 +424,24 @@ function outOfBounds(x, y) {
     return "false";
 }
 
+function enableCheats(event) {
+    let key = event.key;
+    if (key === "p" || key === "P") {
+        if (! player.isCheating) {
+        player.isCheating = true;
+        cheatFrame ++;
+        }
+        else {
+            player.isCheating = false;
+            cheatFrame --;
+        }
+    }
+}
+
 function handleInventory(event) {
     if (! player.isAttacking) {
         let key = event.key;
+
         // cycling through inventory
         if (key === "e" || key === "E") {
             showCurrentItem = true;
@@ -1143,11 +1173,13 @@ function calculateDirection(fromX, fromY, toX, toY) {
 }
 
 function takeDamage() {
-    if (player.health > 0) {
-        iFrames = iFrameMax;
-        player.health--;
-        healthBar.frame ++;
-        player.isHit = true;
+    if (!player.isCheating) {
+        if (player.health > 0) {
+            iFrames = iFrameMax;
+            player.health--;
+            healthBar.frame ++;
+            player.isHit = true;
+        }
     }
 }
 
