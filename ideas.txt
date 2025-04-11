@@ -14,6 +14,7 @@ dashing enemy, dashing player
 be able to attack projectiles
 once player goes past certain area the enemies get up
 character faces where mouse is on shoot
+dust cloud animation when sprinting
 
 DONE
 

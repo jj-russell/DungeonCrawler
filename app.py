@@ -1,4 +1,4 @@
-from flask import Flask, render_template, session, redirect, url_for, g, request
+from flask import Flask, render_template, request, session, redirect, url_for, g, request
 from database import get_db, close_db
 from flask_session import Session
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -34,6 +34,14 @@ def index():
 @login_required
 def game():
     return render_template("game.html")
+
+@app.route("/store_score", methods=["GET", "POST"])
+@login_required
+def store_score():
+    score = int(request.form["score"])
+    # here insert the score into DB
+    # if update successful return succes, otherwise return failure
+    return "success"
 
 @app.route("/register", methods=["GET", "POST"])
 def register():

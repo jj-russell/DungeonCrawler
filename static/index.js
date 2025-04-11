@@ -57,6 +57,8 @@ let player = {
     isCheating: false,
 }
 
+let hasCheated = false;
+
 let inventory = ["sword", "bow", "potion"];
 let current_item = 0;
 let showCurrentItem = false;
@@ -269,7 +271,9 @@ faceLeft = faceRight = faceUp = faceDown = false;
 // let clickY = 0;
 // let hasNewClick = false;
 
-let projectileDelay = 60; 
+let projectileDelay = 60;
+let time = 0;
+let timeFrameCounter = 0;
 
 document.addEventListener("DOMContentLoaded", init, false);
 
@@ -353,24 +357,8 @@ function draw() {
             }
         }
     }
-    context.drawImage(toolbarImage, 0, toolbar.frameY*32, 96, 32,
-        0, canvas.height-32, 96, 32)
-        
-    context.drawImage(cheatImage, 0, cheatFrame*32, 160, 32,
-        canvas.width/2-160, canvas.height-32, 160, 32)
 
-    context.drawImage(cheatStatusImage, 0, cheatFrame*32, 80, 32,
-        canvas.width/2, canvas.height-32, 80, 32)
-
-    if (showCurrentItem) {
-        context.drawImage(toolbarImage, toolbar.frameX*32, toolbar.frameY*32, toolbar.width, toolbar.height,
-            player.x+player.width/4, player.y+player.height, toolbar.width, toolbar.height);
-        showCurrentItemCounter ++;
-    }
-    if (showCurrentItemCounter == 30) {
-        showCurrentItem = false;
-        showCurrentItemCounter = 0;
-    }
+    displayHUD()
 
     if (enemiesPerLevel > 0 ) {
         createEnemies();
@@ -424,12 +412,35 @@ function outOfBounds(x, y) {
     return "false";
 }
 
+function displayHUD() {
+    console.log(showCurrentItemCounter)
+    context.drawImage(toolbarImage, 0, toolbar.frameY*32, 96, 32,
+        0, canvas.height-32, 96, 32)
+        
+    context.drawImage(cheatImage, 0, cheatFrame*32, 160, 32,
+        canvas.width/2-160, canvas.height-32, 160, 32)
+
+    context.drawImage(cheatStatusImage, 0, cheatFrame*32, 80, 32,
+        canvas.width/2+2, canvas.height-32, 80, 32)
+
+    if (showCurrentItem) {
+        context.drawImage(toolbarImage, toolbar.frameX*32, toolbar.frameY*32, toolbar.width, toolbar.height,
+            player.x+player.width/4, player.y+player.height, toolbar.width, toolbar.height);
+        showCurrentItemCounter ++;
+    }
+    if (showCurrentItemCounter === 30) {
+        showCurrentItem = false;
+        showCurrentItemCounter = 0;
+    }
+}
+
 function enableCheats(event) {
     let key = event.key;
     if (key === "p" || key === "P") {
         if (! player.isCheating) {
-        player.isCheating = true;
-        cheatFrame ++;
+            hasCheated = true;
+            player.isCheating = true;
+            cheatFrame ++;
         }
         else {
             player.isCheating = false;
@@ -452,6 +463,7 @@ function handleInventory(event) {
                 current_item ++;
             }
             toolbar.frameX = current_item;
+            showCurrentItemCounter = 0;
         }
         else if (key === "q" || key === "Q") {
             showCurrentItem = true;
@@ -462,6 +474,7 @@ function handleInventory(event) {
                 current_item --;
             }
             toolbar.frameX = current_item;
+            showCurrentItemCounter = 0;
         }
     }
 }
@@ -715,8 +728,8 @@ function handleAttacking() {
                 healthBar.frame --;
                 player.isHealing = true;
                 toolbar.frameY --;
-                
             }
+
             if (player.isHealing) {
                 moveUp = moveLeft = moveDown = moveRight = false;
                 if (healthGainFrameCounter < 20) {
