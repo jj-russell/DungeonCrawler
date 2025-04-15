@@ -196,7 +196,7 @@ let enemyInfo = {
         "attackType": "melee"
     },
     "archer" : {
-        "amount": 5,
+        "amount": 0,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
@@ -296,37 +296,37 @@ function init() {
     player.y = 64;
 
     load_assets([
-        {"var": playerWalk, "url": "../static/images/player_animations/PLAYER_WALK.png"},
-        {"var": playerSlash, "url": "../static/images/player_animations/PLAYER_SLASH.png"},
-        {"var": playerBow, "url": "../static/images/player_animations/PLAYER_BOW.png"},
-        {"var": attackUp, "url": "../static/images/player_attack/ATTACK_UP.png"},
-        {"var": attackDown, "url": "../static/images/player_attack/ATTACK_DOWN.png"},
-        {"var": attackLeft, "url": "../static/images/player_attack/ATTACK_LEFT.png"},
-        {"var": attackRight, "url": "../static/images/player_attack/ATTACK_RIGHT.png"},
-        {"var": skeletonWalk, "url": "../static/images/enemies/skeleton/SKELETON_WALK.png"},
-        {"var": skeletonSlash, "url": "../static/images/enemies/skeleton/SKELETON_SLASH.png"},
-        {"var": skeletonDead, "url": "../static/images/enemies/skeleton/SKELETON_DEAD.png"},
-        {"var": archerWalk, "url": "../static/images/enemies/archer/ARCHER_WALK.png"},
-        {"var": archerAttack, "url": "../static/images/enemies/archer/ARCHER_ATTACK.png"},
-        {"var": archerDead, "url": "../static/images/enemies/archer/ARCHER_DEAD.png"},
-        {"var": mageWalk, "url": "../static/images/enemies/mage/MAGE_WALK.png"},
-        {"var": mageCast, "url": "../static/images/enemies/mage/MAGE_CAST.png"},
-        {"var": mageDead, "url": "../static/images/enemies/mage/MAGE_DEAD.png"},
-        {"var": arrowImage, "url": "../static/images/enemies/archer/ARROW.png"},
-        {"var": fireball, "url": "../static/images/enemies/mage/FIREBALL.png"},
-        {"var": icicle, "url": "../static/images/enemies/mage/ICICLE.png"},
-        {"var": playerHealthBarImage, "url": "../static/images/stats/PLAYER_HEALTHBAR.png"},
-        {"var": playerStaminaBarImage, "url": "../static/images/stats/STAMINA_BAR.png"},
-        {"var": enemyHealthBarImage, "url": "../static/images/stats/ENEMY_HEALTHBAR.png"},
-        {"var": scoreDisplay, "url": "../static/images/stats/SCORE_DISPLAY.png"},
-        {"var": scoreDisplayNums, "url": "../static/images/stats/SCORE_DISPLAY_NUMS.png"},
-        {"var": deathScreen, "url": "../static/images/stats/DEATH_SCREEN.png"},
-        {"var": backgroundImage, "url": "../static/images/tiles.png"},
-        {"var": damageImage, "url": "../static/images/stats/DMG_NUMS.png"},
-        {"var": toolbarImage, "url": "../static/images/stats/TOOLBAR.png"},
-        {"var": healthGainImage, "url": "../static/images/stats/HEALTH_GAIN.png"},
-        {"var": cheatImage, "url": "../static/images/stats/CHEAT.png"},
-        {"var": cheatStatusImage, "url": "../static/images/stats/CHEAT_STATUS.png"},
+        {"var": playerWalk, "url": "static/images/player_animations/PLAYER_WALK.png"},
+        {"var": playerSlash, "url": "static/images/player_animations/PLAYER_SLASH.png"},
+        {"var": playerBow, "url": "static/images/player_animations/PLAYER_BOW.png"},
+        {"var": attackUp, "url": "static/images/player_attack/ATTACK_UP.png"},
+        {"var": attackDown, "url": "static/images/player_attack/ATTACK_DOWN.png"},
+        {"var": attackLeft, "url": "static/images/player_attack/ATTACK_LEFT.png"},
+        {"var": attackRight, "url": "static/images/player_attack/ATTACK_RIGHT.png"},
+        {"var": skeletonWalk, "url": "static/images/enemies/skeleton/SKELETON_WALK.png"},
+        {"var": skeletonSlash, "url": "static/images/enemies/skeleton/SKELETON_SLASH.png"},
+        {"var": skeletonDead, "url": "static/images/enemies/skeleton/SKELETON_DEAD.png"},
+        {"var": archerWalk, "url": "static/images/enemies/archer/ARCHER_WALK.png"},
+        {"var": archerAttack, "url": "static/images/enemies/archer/ARCHER_ATTACK.png"},
+        {"var": archerDead, "url": "static/images/enemies/archer/ARCHER_DEAD.png"},
+        {"var": mageWalk, "url": "static/images/enemies/mage/MAGE_WALK.png"},
+        {"var": mageCast, "url": "static/images/enemies/mage/MAGE_CAST.png"},
+        {"var": mageDead, "url": "static/images/enemies/mage/MAGE_DEAD.png"},
+        {"var": arrowImage, "url": "static/images/enemies/archer/ARROW.png"},
+        {"var": fireball, "url": "static/images/enemies/mage/FIREBALL.png"},
+        {"var": icicle, "url": "static/images/enemies/mage/ICICLE.png"},
+        {"var": playerHealthBarImage, "url": "static/images/stats/PLAYER_HEALTHBAR.png"},
+        {"var": playerStaminaBarImage, "url": "static/images/stats/STAMINA_BAR.png"},
+        {"var": enemyHealthBarImage, "url": "static/images/stats/ENEMY_HEALTHBAR.png"},
+        {"var": scoreDisplay, "url": "static/images/stats/SCORE_DISPLAY.png"},
+        {"var": scoreDisplayNums, "url": "static/images/stats/SCORE_DISPLAY_NUMS.png"},
+        {"var": deathScreen, "url": "static/images/stats/DEATH_SCREEN.png"},
+        {"var": backgroundImage, "url": "static/images/tiles.png"},
+        {"var": damageImage, "url": "static/images/stats/DMG_NUMS.png"},
+        {"var": toolbarImage, "url": "static/images/stats/TOOLBAR.png"},
+        {"var": healthGainImage, "url": "static/images/stats/HEALTH_GAIN.png"},
+        {"var": cheatImage, "url": "static/images/stats/CHEAT.png"},
+        {"var": cheatStatusImage, "url": "static/images/stats/CHEAT_STATUS.png"},
     ], draw)
     
     draw();
@@ -381,6 +381,8 @@ function draw() {
 
     drawEnemies();
     
+    handleEnemyProjectiles();
+
     handleProjectiles();
     
     moveEnemies();
@@ -413,7 +415,6 @@ function outOfBounds(x, y) {
 }
 
 function displayHUD() {
-    console.log(showCurrentItemCounter)
     context.drawImage(toolbarImage, 0, toolbar.frameY*32, 96, 32,
         0, canvas.height-32, 96, 32)
         
@@ -559,6 +560,18 @@ function movePlayer() {
         }
     }
 }
+
+let mouseX, mouseY;
+let playerProjectile = {
+    x: player.x,
+    y: player.y,
+    width: 64,
+    height: 64,
+    dx: 0,
+    dy: 0,
+    hasFired: false,
+}
+let playerProjectiles = [];
 
 function handleAttacking() {
     window.addEventListener("click", attack, false);
@@ -713,8 +726,16 @@ function handleAttacking() {
             context.drawImage(playerBow, bowFrame*player.width, player.frameY*player.height, 64, 64,
                 player.x, player.y, 64, 64)
             if (bowFrame === 0) {
+                let direction = calculateDirection(player.x, player.y, mouseX, mouseY);
+                playerProjectile.dx = direction.dx
+                playerProjectile.dy = direction.dy
+                playerProjectile.hasFired = true;
                 player.isAttacking = false;
                 bowFrameCounter = 0;
+            }
+            if (playerProjectile.hasFired) {
+                context.drawImage(arrowImage, 0, 0, 64, 64,
+                    player.x, player.y, 64, 64)
             }
             
         }
@@ -776,19 +797,36 @@ function handleAttacking() {
     }
 }
 
-function shoot(event) {
-    // let x = event.clientX;
-    // let y = event.clientY;
-    // return { x, y }
+function handleProjectiles() {
+    if (playerProjectile.hasFired) {    
+        playerProjectile.x += playerProjectile.dx * projectileSpeed
+        playerProjectile.y += playerProjectile.dy * projectileSpeed
+        let x = playerProjectile.x;
+        let y = playerProjectile.y;
+        let w = playerProjectile.width;
+        let h = playerProjectile.height;
+
+        // projectile reaches the edge
+        if ((outOfBounds(x,y).includes("left")) || ((outOfBounds(x,y+h).includes("down"))) || 
+            (outOfBounds(x,y).includes("up")) || ((outOfBounds(x+w,y).includes("right")))) {
+                playerProjectile.x = player.x;
+                playerProjectile.y = player.y;
+                playerProjectile.hasFired = false;
+        }
+        else {
+            context.drawImage(arrowImage, 0, 0, 64, 64,
+                playerProjectile.x, playerProjectile.y, 64, 64)
+        }
+        
+    }
 }
 
 function attack(event) {
     if (!player.isAttacking) {
         player.isAttacking = true;
     }
-    // let x = event.clientX;
-    // let y = event.clientY;
-    // return { x, y }
+    mouseX = event.clientX;
+    mouseY = event.clientY;
 }
 
 function createEnemies() {
@@ -1054,7 +1092,7 @@ function handleEnemyAttacking() {
     }
 }
 
-function handleProjectiles() {
+function handleEnemyProjectiles() {
     for (let p of projectiles) {
         for (let e of enemies) {
             if (p.id === e.id && e.canFire) {
@@ -1143,7 +1181,6 @@ function handleProjectiles() {
                 let h = projectileHitbox.height;
 
                 // projectile reaches the edge
-                
                 if ((outOfBounds(x,y).includes("left")) || ((outOfBounds(x,y+h).includes("down"))) || 
                     (outOfBounds(x,y).includes("up")) || ((outOfBounds(x+w,y).includes("right")))) {
                     for (let e of enemies) {
@@ -1161,10 +1198,10 @@ function handleProjectiles() {
                 else {
                     for (let e of enemies) {
                         if (e.id === p.id) {
-                                p.frameX = (p.frameX + 1) % enemyInfo[e.type]["projectileAnimationFrames"];
-                                context.drawImage(enemyInfo[e.type]["projectile"], 
-                                    p.frameX*p.width, p.frameY*p.height, p.width, p.height,
-                                    p.x, p.y, p.width, p.height)
+                            p.frameX = (p.frameX + 1) % enemyInfo[e.type]["projectileAnimationFrames"];
+                            context.drawImage(enemyInfo[e.type]["projectile"], 
+                                p.frameX*p.width, p.frameY*p.height, p.width, p.height,
+                                p.x, p.y, p.width, p.height)
                             break;
                         }
                     }

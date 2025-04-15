@@ -38,10 +38,22 @@ def game():
 @app.route("/store_score", methods=["GET", "POST"])
 @login_required
 def store_score():
-    score = int(request.form["score"])
-    # here insert the score into DB
-    # if update successful return succes, otherwise return failure
-    return "success"
+    print("Request method:", request.method)
+    print("Request form:", request.form)
+    print("Request data:", request.data)
+    
+    score = request.form.get('score')
+    print("Score value:", score)
+    
+    if score is not None:
+        db = get_db()
+        db.execute("""UPDATE users
+                    SET score = ?
+                    WHERE user = ?""", (score, g.user))
+        db.commit()
+        return "success"
+    else:
+        return "Error: Score is None", 400
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
