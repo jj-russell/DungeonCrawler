@@ -190,8 +190,8 @@ let enemies = [];
 
 let enemyInfo = {
     "skeleton" : {
-        "amount": 0,
-        "maxHealth": 1,
+        "amount": 1,
+        "maxHealth": 10,
         "canKnockback": true,
         "attackType": "melee"
     },
@@ -390,7 +390,6 @@ function draw() {
     movePlayer(); 
 
     playerStats();
-
 }
 
 function outOfBounds(x, y) {
@@ -865,6 +864,14 @@ function handleProjectiles() {
             projectileHitbox.width /= 2;
             player.frameY = 3;
         }
+        for (let e of enemies) {
+            if (collides(projectileHitbox, enemyHitbox)) {
+                e.health --;
+                playerProjectiles.splice(playerProjectiles.indexOf(p), 1)
+                e.isHit = true;
+            }
+        }
+
         if (p.hasFired) {    
             let x = projectileHitbox.x;
             let y = projectileHitbox.y;
@@ -998,9 +1005,19 @@ function drawEnemies() {
             e.x, e.y, enemyHealthBar.width, enemyHealthBar.height);
     }
 }
-
+let c = 0;
 function moveEnemies() {
     for (let e of enemies) {
+        if (e.isHit) {
+            if (c === 15) {
+                e.isHit = false;
+                c = 0;
+            }
+            else {
+                c++;
+            }
+        }
+
         // dont move if attacking, dying, spawning
         if (e.isAttacking || e.isDying || e.isSpawning) {
             continue;
