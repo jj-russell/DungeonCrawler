@@ -562,15 +562,6 @@ function movePlayer() {
 }
 
 let mouseX, mouseY;
-let playerProjectile = {
-    x: player.x,
-    y: player.y,
-    width: 64,
-    height: 64,
-    dx: 0,
-    dy: 0,
-    hasFired: false,
-}
 let playerProjectiles = [];
 
 function handleAttacking() {
@@ -726,18 +717,25 @@ function handleAttacking() {
             context.drawImage(playerBow, bowFrame*player.width, player.frameY*player.height, 64, 64,
                 player.x, player.y, 64, 64)
             if (bowFrame === 0) {
-                let direction = calculateDirection(player.x, player.y, mouseX, mouseY);
+                let playerProjectile = {
+                    x: player.x,
+                    y: player.y,
+                    width: 64,
+                    height: 64,
+                    dx: 0,
+                    dy: 0,
+                    hasFired: false,
+                    frameX: 0,
+                    frameY: 0,
+                }
+                playerProjectiles.push(playerProjectile)
+                let direction = calculateDirection(player.x+player.width/2, player.y+player.height/2, mouseX, mouseY);
                 playerProjectile.dx = direction.dx
                 playerProjectile.dy = direction.dy
                 playerProjectile.hasFired = true;
                 player.isAttacking = false;
                 bowFrameCounter = 0;
             }
-            if (playerProjectile.hasFired) {
-                context.drawImage(arrowImage, 0, 0, 64, 64,
-                    player.x, player.y, 64, 64)
-            }
-            
         }
         
         else if (inventory[current_item] === "potion") {
@@ -798,26 +796,96 @@ function handleAttacking() {
 }
 
 function handleProjectiles() {
-    if (playerProjectile.hasFired) {    
-        playerProjectile.x += playerProjectile.dx * projectileSpeed
-        playerProjectile.y += playerProjectile.dy * projectileSpeed
-        let x = playerProjectile.x;
-        let y = playerProjectile.y;
-        let w = playerProjectile.width;
-        let h = playerProjectile.height;
-
-        // projectile reaches the edge
-        if ((outOfBounds(x,y).includes("left")) || ((outOfBounds(x,y+h).includes("down"))) || 
-            (outOfBounds(x,y).includes("up")) || ((outOfBounds(x+w,y).includes("right")))) {
-                playerProjectile.x = player.x;
-                playerProjectile.y = player.y;
-                playerProjectile.hasFired = false;
-        }
-        else {
-            context.drawImage(arrowImage, 0, 0, 64, 64,
-                playerProjectile.x, playerProjectile.y, 64, 64)
+    for (let p of playerProjectiles) {
+        let projectileHitbox = {
+            x: p.x,
+            y: p.y,
+            width: p.width,
+            height: p.height
         }
         
+        // regular projectile path
+        p.x += p.dx * projectileSpeed
+        p.y += p.dy * projectileSpeed
+
+        if (-0.25 < p.dx && p.dx < 0.25) {
+            if (p.dy > 0.9) { // down
+                p.frameY = 6;
+                projectileHitbox.y += projectileHitbox.height/3;
+                player.frameY = 2;
+            }
+            else { // up
+                p.frameY = 2;
+                projectileHitbox.y += projectileHitbox.height/6;
+                player.frameY = 0;
+            }
+            projectileHitbox.x = p.x +p.width/3;
+            projectileHitbox.width = p.width/3;
+            projectileHitbox.height /= 2;
+        }
+        else if (-0.25 < p.dy && p.dy < 0.25) {
+            if (p.dx > 0.9) { // right
+                p.frameY = 4;
+                projectileHitbox.x += projectileHitbox.width/2;
+                player.frameY = 3;
+            }
+            else { // left
+                p.frameY = 0;
+                player.frameY = 1;
+            }
+            projectileHitbox.y = p.y +p.height/3;
+            projectileHitbox.height = p.height/3;
+            projectileHitbox.width /= 2;
+        }
+        else if (p.dx < -0.25) {
+            if (p.dy > 0.25) { // bottom left
+                p.frameY = 7;
+                projectileHitbox.y = p.y + p.height/2.5;
+            }
+            else { // top left
+                p.frameY = 1;
+                projectileHitbox.y = p.y + p.height/4;
+            }
+            projectileHitbox.x = p.x + 8;
+            projectileHitbox.height = p.height/3;
+            projectileHitbox.width /= 2;
+            player.frameY = 1;
+        }
+        else if (p.dx > -0.25) {
+            if (p.dy > 0.25) { // bottom right
+                p.frameY = 5;
+                projectileHitbox.y = p.y + p.height/2.5;
+            }
+            else { // top right
+                p.frameY = 3;
+                projectileHitbox.y = p.y + p.height/4;
+            }
+            projectileHitbox.x = p.x + 24;
+            projectileHitbox.height = p.height/3;
+            projectileHitbox.width /= 2;
+            player.frameY = 3;
+        }
+        if (p.hasFired) {    
+            let x = projectileHitbox.x;
+            let y = projectileHitbox.y;
+            let w = projectileHitbox.width;
+            let h = projectileHitbox.height;
+
+            // projectile reaches the edge
+            if ((outOfBounds(x,y).includes("left")) || ((outOfBounds(x,y+h).includes("down"))) || 
+                (outOfBounds(x,y).includes("up")) || ((outOfBounds(x+w,y).includes("right")))) {
+                    playerProjectiles.splice(playerProjectiles.indexOf(p), 1)
+                    projectileHitbox.x = player.x;
+                    projectileHitbox.y = player.y;
+                    projectileHitbox.hasFired = false;
+            }
+            else {
+                p.frameX = (p.frameX + 1) % 2;
+                context.drawImage(arrowImage, p.frameX*p.width, p.frameY*p.height, p.width, p.height,
+                    p.x, p.y, p.width, p.height)
+                }
+            
+        }
     }
 }
 
