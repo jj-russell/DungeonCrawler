@@ -37,7 +37,8 @@ let maxPlayerHealth = 5;
 let player = {
     score: 0,
     health: maxPlayerHealth,
-    damage: 1,
+    damage: 2,
+    bowDamage: 1,
     stamina: 50,
     x: 64,
     y: 64,
@@ -56,6 +57,7 @@ let player = {
     isHealing: false,
     isCheating: false,
 }
+let damageFrame = -1;
 
 let hasCheated = false;
 
@@ -254,6 +256,8 @@ let toolbar = {
 
 let cheatFrame = 0;
 
+let hitCounter = 0;
+
 // let damageNums = {
 //     takeDmgFrame: 0,
 //     giveDmgFrame: 0,
@@ -373,7 +377,7 @@ function draw() {
     handleAttacking();
     for (let e of enemies) {
         if (e.isHit) {
-            context.drawImage(damageImage, 0, 0, 24, 16,
+            context.drawImage(damageImage, damageFrame*24, 0, 24, 16,
                 e.x+e.width/3, e.y-16, 24, 16)
         }
     }
@@ -566,9 +570,9 @@ let playerProjectiles = [];
 function handleAttacking() {
     window.addEventListener("click", attack, false);
     if (player.isAttacking) {
+        moveUp = moveLeft = moveDown = moveRight = false;
         player.isSprinting = false;
         if (inventory[current_item] === "sword") {
-            moveUp = moveLeft = moveDown = moveRight = false;
             let swordHitbox = {
                 x: player.x,
                 y: player.y,
@@ -649,6 +653,7 @@ function handleAttacking() {
                     if (! e.isHit) {
                         if (swordFrame <= 3) {
                             e.health -= player.damage;
+                            damageFrame = player.damage -1;
                         }
                         
                         if (e.health <= 0) {
@@ -707,7 +712,6 @@ function handleAttacking() {
         }
     
         else if (inventory[current_item] === "bow") {
-            moveUp = moveLeft = moveDown = moveRight = false;
             if (bowFrameCounter === 0) {
                 bowFrame = (bowFrame +1) % 13;
                 bowFrameCounter = 2;
@@ -738,7 +742,6 @@ function handleAttacking() {
         }
         
         else if (inventory[current_item] === "potion") {
-            // moveUp = moveLeft = moveDown = moveRight = false;
             context.drawImage(playerWalk, player.frameX*player.width, player.frameY*player.height, player.width, player.height,
                 player.x, player.y, player.width, player.height);
             if (player.health < maxPlayerHealth && !player.isHealing && toolbar.frameY > 0) {
@@ -866,7 +869,8 @@ function handleProjectiles() {
         }
         for (let e of enemies) {
             if (collides(projectileHitbox, enemyHitbox)) {
-                e.health --;
+                e.health -= player.bowDamage;
+                damageFrame = player.bowDamage -1;
                 playerProjectiles.splice(playerProjectiles.indexOf(p), 1)
                 e.isHit = true;
             }
@@ -1005,16 +1009,16 @@ function drawEnemies() {
             e.x, e.y, enemyHealthBar.width, enemyHealthBar.height);
     }
 }
-let c = 0;
+
 function moveEnemies() {
     for (let e of enemies) {
         if (e.isHit) {
-            if (c === 15) {
+            if (hitCounter === 15) {
                 e.isHit = false;
-                c = 0;
+                hitCounter = 0;
             }
             else {
-                c++;
+                hitCounter++;
             }
         }
 
