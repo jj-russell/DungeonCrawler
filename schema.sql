@@ -3,5 +3,8 @@ CREATE TABLE users
 (
     user TEXT PRIMARY KEY,
     password TEXT NOT NULL,
-    score INTEGER
+    score INTEGER,
+    time INTEGER
 );
+
+update users set score = 0, time = 0;

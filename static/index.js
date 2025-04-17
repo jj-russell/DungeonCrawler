@@ -277,7 +277,7 @@ faceLeft = faceRight = faceUp = faceDown = false;
 
 let projectileDelay = 60;
 let time = 0;
-let timeFrameCounter = 0;
+let timeFrameCounter = 30;
 
 document.addEventListener("DOMContentLoaded", init, false);
 
@@ -394,6 +394,16 @@ function draw() {
     movePlayer(); 
 
     playerStats();
+
+    if (timeFrameCounter === 0) {
+        time ++;
+        timeFrameCounter = 30;
+    }
+    else {
+        timeFrameCounter --;
+    }
+    console.log(time)
+
 }
 
 function outOfBounds(x, y) {
@@ -661,7 +671,6 @@ function handleAttacking() {
                             e.deathFrame = 0;
                             e.deathCounter = 0;
                             player.score ++;
-                            // score.oneFrame ++;
                         }
                         e.isHit = true;
                     }
@@ -1451,7 +1460,7 @@ function stop() {
 
     let data = new FormData();
     data.append("score", player.score);
-    console.log(player.score)
+    data.append("time", time);
 
     xhttp = new XMLHttpRequest();
     xhttp.addEventListener("readystatechange", handle_response, false);

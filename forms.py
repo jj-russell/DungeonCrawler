@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField
-from wtforms.validators import InputRequired, EqualTo
+from wtforms.validators import InputRequired, EqualTo, Length
 
 class LoginForm(FlaskForm):
     user = StringField("User", validators=[
@@ -15,6 +15,7 @@ class LoginForm(FlaskForm):
 
 class RegistrationForm(LoginForm):
     user = StringField("User", validators=[
+                    Length(max=10),
                     InputRequired(message="* User cannot be blank.")], 
                     render_kw={"placeholder": "Username"})
 

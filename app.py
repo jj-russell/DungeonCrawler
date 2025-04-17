@@ -38,15 +38,25 @@ def game():
 @login_required
 def store_score():
     score = int(request.form["score"])
+    time = int(request.form["time"])
+    
     db = get_db()
     current_score = db.execute("""SELECT score
                                   FROM users
                                   WHERE user = ?""", (g.user,)).fetchone()
-    current_score = current_score["score"]
-    if score > current_score:
+
+    current_time = db.execute("""SELECT time
+                                  FROM users
+                                  WHERE user = ?""", (g.user,)).fetchone()
+
+    current_score = int(current_score["score"])
+    current_time = int(current_time["time"])
+
+
+    if score > current_score or (score == current_score and time < current_time):
         db.execute("""UPDATE users
-                    SET score = ?
-                    WHERE user = ?""", (score, g.user))
+                    SET score = ?, time = ?
+                    WHERE user = ?""", (score, time, g.user))
         db.commit()
         return "success"
     return "nope"
@@ -54,8 +64,8 @@ def store_score():
 @app.route("/leaderboard")
 def leaderboard():
     db = get_db()
-    leaderboard = db.execute("""SELECT * FROM users
-                                ORDER BY score DESC;""").fetchall()
+    leaderboard = db.execute("""SELECT * FROM users  
+                                ORDER BY score DESC, time ASC;""").fetchall()
 
     return render_template("leaderboard.html", leaderboard=leaderboard, title="Leaderboard")
 
@@ -76,8 +86,8 @@ def register():
             form.user.errors.append("* User is already taken")
 
         if not form.user.errors and not form.password.errors:
-            db.execute("""INSERT INTO users (user, password, score)
-                          VALUES (?, ?, 0);""", (user, generate_password_hash(password)))
+            db.execute("""INSERT INTO users (user, password, score, time)
+                          VALUES (?, ?, '0', '0');""", (user, generate_password_hash(password)))
             db.commit()
             return redirect(url_for("login"))
 
@@ -111,3 +121,7 @@ def logout():
     session.clear()
     session.modified = True
     return redirect(url_for("index"))
+
+@app.route("/attribution")
+def attribution():
+    return render_template("attribution.html", title="attribution")

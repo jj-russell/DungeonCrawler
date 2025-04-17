@@ -16,8 +16,9 @@ img, video, iframe, figure {
 :root {
     --bg-main: #5BA17f;
     --bg-two: #85694B;
-    --bg-three: #A1784B;
+    --bg-three: #aaaaaa;
     --bg-four: #4B6B85;
+    --bg-five: #5f7f99;
 }
 
 * {
@@ -26,6 +27,7 @@ img, video, iframe, figure {
 }
 
 body {
+    color: var(--bg-three);
     background-color: var(--bg-main);
 }
 
@@ -40,21 +42,23 @@ a:hover {
 
 header {
     background-color: var(--bg-two);
-    padding: 1em;
-    gap: 1em;
     display: flex;
-    /* justify-content: center; */
     align-items: center;
-    color: rgb(170, 170, 170);
+    justify-content: space-between;
+    padding: 0.5em;
+}
+
+h1 {
+    font-size: 1.25em;
 }
 
 i {
     color: var(--bg-main);
 }
 
-h1 {
-    margin-left: 43%;
-    margin-right: auto;
+header > * {
+    flex: 1;
+    text-align: center;
 }
 
 body {

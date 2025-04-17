@@ -19,9 +19,8 @@ table {
 }
 
 th, td {
-    padding: 0.5em;
     background-color: var(--bg-four);
-    color: var(--bg-three);
+    padding: 0.5em;
 }
 
 thead th {
@@ -30,4 +29,12 @@ thead th {
     top: 0;
     background-color: var(--bg-three);
     color: var(--bg-four);
+}
+
+.user_rank {
+    color: var(--bg-main);
+}
+
+.other_user {
+    background-color: var(--bg-four);
 }
