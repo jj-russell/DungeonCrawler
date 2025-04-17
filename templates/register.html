@@ -1,20 +1,20 @@
 {% extends "base.html" %}
     {% block styles %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='register.css') }}" />
     {% endblock %}
 {% block main_content %}
 
 <form action="" method="POST" novalidate>
     {{ form.hidden_tag() }}
-    <h1>Sign Up</h1>
 
     {{ form.user() }}
     {% for error in form.user.errors %}
-    <span class="error">{{ error }}</span>
+        <span class="error">{{ error }}</span>
     {% endfor %}
 
     {{ form.password() }}
     {% for error in form.password.errors %}
-    <span class="error">{{ error }}</span>
+        <span class="error">{{ error }}</span>
     {% endfor %}
     
     {{ form.password2() }}
@@ -22,5 +22,6 @@
     {{ form.submit() }}
     <p><a href="{{url_for('login')}}">Login</a></p>
 </form>
+<p><a href="{{url_for('index')}}">Main Menu</a></p>
 
 {% endblock %}

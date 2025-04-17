@@ -33,7 +33,7 @@ let tilesPerRow = 8;
 let tileSize = 32;
 let backgroundImage = new Image();
 
-let maxPlayerHealth = 5;
+let maxPlayerHealth = 1;
 let player = {
     score: 0,
     health: maxPlayerHealth,
@@ -192,8 +192,8 @@ let enemies = [];
 
 let enemyInfo = {
     "skeleton" : {
-        "amount": 1,
-        "maxHealth": 10,
+        "amount": 10,
+        "maxHealth": 1,
         "canKnockback": true,
         "attackType": "melee"
     },
@@ -1444,15 +1444,32 @@ function collides(obj1, obj2) {
     return true;
 }
 
-function stop(outcome_txt) {
+let xhttp;
+function stop() {
     window.removeEventListener("keydown", activate, false);
     window.cancelAnimationFrame(request_id);
 
-    // let play = document.querySelector("#play > a");
-    // play.innerHTML = "Play Again";
+    let data = new FormData();
+    data.append("score", player.score);
+    console.log(player.score)
 
-    // let outcome_element = document.querySelector("#outcome");
-    // outcome_element.innerHTML = outcome_txt;
+    xhttp = new XMLHttpRequest();
+    xhttp.addEventListener("readystatechange", handle_response, false);
+    xhttp.open("POST", "/store_score", true);
+    xhttp.send(data)
+}
+
+function handle_response() {
+    if (xhttp.readyState === 4) {
+        if (xhttp.status === 200) {
+            if (xhttp.responseText === "success") {
+                console.log("Yes");
+            }
+            else {
+                console.log("No");
+            }
+        }
+    }
 }
 
 function randint(min, max) {

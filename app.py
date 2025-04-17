@@ -26,34 +26,38 @@ def login_required(view):
     return wrapped_view
 
 @app.route("/", methods=["GET", "POST"])
-@login_required
 def index():
-    return render_template("index.html")
+    return render_template("index.html", title="Main Menu")
 
 @app.route("/game", methods=["GET", "POST"])
 @login_required
 def game():
-    return render_template("game.html")
+    return render_template("game.html", title="Game")
 
 @app.route("/store_score", methods=["GET", "POST"])
 @login_required
 def store_score():
-    print("Request method:", request.method)
-    print("Request form:", request.form)
-    print("Request data:", request.data)
-    
-    score = request.form.get('score')
-    print("Score value:", score)
-    
-    if score is not None:
-        db = get_db()
+    score = int(request.form["score"])
+    db = get_db()
+    current_score = db.execute("""SELECT score
+                                  FROM users
+                                  WHERE user = ?""", (g.user,)).fetchone()
+    current_score = current_score["score"]
+    if score > current_score:
         db.execute("""UPDATE users
                     SET score = ?
                     WHERE user = ?""", (score, g.user))
         db.commit()
         return "success"
-    else:
-        return "Error: Score is None", 400
+    return "nope"
+
+@app.route("/leaderboard")
+def leaderboard():
+    db = get_db()
+    leaderboard = db.execute("""SELECT * FROM users
+                                ORDER BY score DESC;""").fetchall()
+
+    return render_template("leaderboard.html", leaderboard=leaderboard, title="Leaderboard")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -72,12 +76,12 @@ def register():
             form.user.errors.append("* User is already taken")
 
         if not form.user.errors and not form.password.errors:
-            db.execute("""INSERT INTO users (user, password)
-                          VALUES (?, ?);""", (user, generate_password_hash(password)))
+            db.execute("""INSERT INTO users (user, password, score)
+                          VALUES (?, ?, 0);""", (user, generate_password_hash(password)))
             db.commit()
-            return redirect(url_for("index"))
+            return redirect(url_for("login"))
 
-    return render_template("register.html", form=form)
+    return render_template("register.html", form=form, title="Register")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -100,7 +104,7 @@ def login():
             if not next_page:
                 next_page = url_for("index")
             return redirect(next_page)
-    return render_template("login.html", form=form)
+    return render_template("login.html", form=form, title="Login")
 
 @app.route("/logout")
 def logout():

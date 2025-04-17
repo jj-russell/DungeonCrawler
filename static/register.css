@@ -1,0 +1,50 @@
+header {
+    display: none;
+}
+
+body {
+    margin-top: 2em;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+main {
+    margin-top: 0;
+}
+
+form {
+    background-color: var(--bg-two) ;
+    text-align: center;
+    width: 80vw;
+    max-width: 400px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    border-radius: 10px;
+    box-shadow: 0px 2px 20px -10px;
+}
+
+p {
+    text-decoration: underline;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+a {
+    font-size: 24px;
+    color: black;
+}
+
+input[type="submit"]:hover {
+    background-color: gray;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
