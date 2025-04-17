@@ -106,13 +106,6 @@ let playerHitbox = {
     height: player.height-12
 }
 
-let enemyHitbox  = {
-    x: 0, 
-    y: 0, 
-    width: player.width/2, 
-    height: player.height-12
-}
-
 let swordFrame = 0;
 let enemySwordFrame = 0;
 
@@ -402,8 +395,6 @@ function draw() {
     else {
         timeFrameCounter --;
     }
-    console.log(time)
-
 }
 
 function outOfBounds(x, y) {
@@ -691,8 +682,8 @@ function handleAttacking() {
                             e.y -= 3*e.yChange;
                         }
                         
-                        let w = enemyHitbox.width;
-                        let h = enemyHitbox.height;
+                        let w = e.enemyHitbox.width;
+                        let h = e.enemyHitbox.height;
 
                         // prevent enemies from being knocked out of bounds
                         if (outOfBounds(e.x+w, e.y).includes("right")) {
@@ -877,11 +868,17 @@ function handleProjectiles() {
             player.frameY = 3;
         }
         for (let e of enemies) {
-            if (collides(projectileHitbox, enemyHitbox)) {
+            if (collides(projectileHitbox, e.enemyHitbox)) {
                 e.health -= player.bowDamage;
                 damageFrame = player.bowDamage -1;
                 playerProjectiles.splice(playerProjectiles.indexOf(p), 1)
                 e.isHit = true;
+                if (e.health <= 0) {
+                    e.isDying = true;
+                    e.deathFrame = 0;
+                    e.deathCounter = 0;
+                    player.score ++;
+                }
             }
         }
 
@@ -954,6 +951,12 @@ function createEnemies() {
                     spawnFrame: 5,
                     spawnCounter: 0,
                     isHit: false,
+                    enemyHitbox: {
+                        x: 0, 
+                        y: 0, 
+                        width: player.width/2, 
+                        height: player.height-12
+                    }
                 }
                 
                 e.id = enemyId;
@@ -1036,9 +1039,6 @@ function moveEnemies() {
             continue;
         }
 
-        // e.attackFrameX = 0;
-        // e.canFire = false;
-
         // if enemy is next to the player stop and attack
         let distanceY = Math.abs(player.y - e.y);
         let distanceX = Math.abs(player.x - e.x)
@@ -1106,7 +1106,7 @@ function moveEnemies() {
             }
         }
         
-        enemyHitbox = {
+        e.enemyHitbox = {
             x: e.x+16, 
             y: e.y+12, 
             width: e.width/2, 
