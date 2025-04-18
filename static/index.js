@@ -880,19 +880,21 @@ function attack(event) {
     mouseY = event.clientY;
 }
 
-let enemiesPerLevel = 10;
+let enemiesPerLevel = 20;
 let maxEnemiesAtOnce = 5;
 let enemies = [];
 
+// the order to spawn enemies, e.g. 1 mage then 2 archers then 1 skeleton etc.
+let enemySpawnQueue = ["skeleton 2", "archer 2", "mage 2", "skeleton 2", "archer 2", "mage 2"]
 let enemyInfo = {
     "skeleton" : {
-        "amount": 5,
+        "amount": 4,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "melee"
     },
     "archer" : {
-        "amount": 5,
+        "amount": 4,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
@@ -902,7 +904,7 @@ let enemyInfo = {
         "projectileAnimationFrames": 2,
     },
     "mage" : {
-        "amount": 5,
+        "amount": 4,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
@@ -913,19 +915,32 @@ let enemyInfo = {
     },
 }
 
-let enemyTypes = Object.keys(enemyInfo)
-let enemySpawnOrder = ["mage", "archer", "skeleton", "mage", "skeleton", "mage"]
 
 function createEnemies() {
     if (enemies.length < maxEnemiesAtOnce) {
         // generating different types of enemies e.g. skeletons or mages
-        for (let type of enemySpawnOrder) {
-            let enemiesGenerated = 0;
-            // generating each enemy for the amount of time they're in the level
-            let enemyCounter = enemyInfo[type]["amount"]
-            for (let i = 0; i < enemyCounter; i++) {
+        for (let nextSpawn of enemySpawnQueue) {
+            let type; // which enemy to spawn
+            let amount; // how many to spawn 
+
+            // separating string into type and amount e.g. "mage 2" -> type="mage", "amount"=2
+            // if there is a space that means the digit is only 1 character long, so slice the last character
+            if ((nextSpawn.slice(-2)).includes(" ")) { 
+                amount = nextSpawn.slice(-1);
+                type = nextSpawn.slice(0, -2);
+            }
+            else { // otherwise slice the last 2 characters for a two digit number
+                amount = nextSpawn.slice(-2);
+                type = nextSpawn.slice(0, -3);
+            }
+            amount = Number(amount);
+
+            let enemiesToGenerate = enemyInfo[type]["amount"];
+
+            for (let enemiesGenerated = 0; enemiesGenerated < enemiesToGenerate; enemiesGenerated++) {
                 if (enemies.length === maxEnemiesAtOnce) break;
-                enemiesGenerated ++;
+                if (enemiesGenerated === amount) break;
+
                 let e = {
                     type: type,
                     health: enemyInfo[type]["maxHealth"],
@@ -977,15 +992,85 @@ function createEnemies() {
                 // convert co-ordinates to multiples of 4
                 e.x = (e.x + (4 - e.x%4))
                 e.y = (e.y + (4 - e.y%4))
-
-                enemies.push(e)
-                enemiesPerLevel --
+                
+                enemies.push(e);
+                enemiesPerLevel --;
+                enemyInfo[type]["amount"] --;
             }
-            // the amount of each enemy type to generate 
-            enemyInfo[type]["amount"] -= enemiesGenerated
         }
     }
 }
+
+// function createEnemies() {
+//     if (enemies.length < maxEnemiesAtOnce) {
+//         // generating different types of enemies e.g. skeletons or mages
+//         for (let type of enemySpawnOrder) {
+//             let enemiesGenerated = 0;
+//             // generating each enemy for the amount of time they're in the level
+//             let enemyCounter = enemyInfo[type]["amount"]
+//             for (let i = 0; i < enemyCounter; i++) {
+//                 if (enemies.length === maxEnemiesAtOnce) break;
+//                 enemiesGenerated ++;
+//                 let e = {
+//                     type: type,
+//                     health: enemyInfo[type]["maxHealth"],
+//                     x: 0,
+//                     y: 0, 
+//                     width: 64,
+//                     height: 64,
+//                     xChange: 4,
+//                     yChange: 4,
+//                     frameX: 0,
+//                     frameY: 0,
+//                     attackFrameX: 0,
+//                     attackFrameY: 0,
+//                     moveUp: false,
+//                     moveLeft: false,
+//                     moveDown: false,
+//                     moveRight: false,
+//                     moveCounter: 0,
+//                     isAttacking: false,
+//                     attackCounter: 0,
+//                     isDying: false,
+//                     deathFrame: 0,
+//                     deathCounter: 0,
+//                     isSpawning: true,
+//                     spawnFrame: 5,
+//                     spawnCounter: 0,
+//                     isHit: false,
+//                 }
+                
+//                 e.enemyHitbox = {
+//                     x: 0, 
+//                     y: 0, 
+//                     width: e.width/2, 
+//                     height: e.height-12
+//                 }
+
+//                 e.id = enemyId;
+//                 enemyId ++;
+
+//                 if (enemyInfo[e.type]["attackType"] === "range") {
+//                     e.canFire = false;
+//                     e.projectileCounter = 0
+//                     totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
+//                 }
+                
+//                 e.x = randint(256, canvas.width-32-e.width)
+//                 e.y = randint(52, canvas.height-152-e.height)
+
+//                 // convert co-ordinates to multiples of 4
+//                 e.x = (e.x + (4 - e.x%4))
+//                 e.y = (e.y + (4 - e.y%4))
+
+//                 enemies.push(e)
+//                 enemiesPerLevel --
+//             }
+//             // the amount of each enemy type to generate 
+//             enemyInfo[type]["amount"] -= enemiesGenerated
+//         }
+//     }
+// }
 
 function drawEnemies() {
     for (let e of enemies) {

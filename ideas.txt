@@ -17,6 +17,7 @@ character faces where mouse is on shoot
 dust cloud animation when sprinting
 remove projectile delay variables
 extra let e of enemies in enemy projectiles function
+healer enemy
 
 DONE
 
