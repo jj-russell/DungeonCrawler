@@ -1,3 +1,5 @@
+// import levels from './levels.js';
+
 let canvas;
 let context;
 let fpsInterval = 1000 / 30; // the denominator is frames-per-second
@@ -59,6 +61,9 @@ let player = {
 }
 let damageFrame = -1;
 
+let mouseX, mouseY;
+let playerProjectiles = [];
+
 let hasCheated = false;
 
 let inventory = ["sword", "bow", "potion"];
@@ -107,10 +112,8 @@ let playerHitbox = {
 }
 
 let swordFrame = 0;
-let enemySwordFrame = 0;
 
 let moveCounter = 0;
-let swingCounter = 0;
 
 let score = {
     hundredsFrame: 0,
@@ -178,41 +181,6 @@ let healthGainFrameCounter = 0;
 
 let iFrames = 0;
 let iFrameMax = 45;
-
-let enemiesPerLevel = 100;
-let maxEnemyCount = 5;
-let enemies = [];
-
-let enemyInfo = {
-    "skeleton" : {
-        "amount": 10,
-        "maxHealth": 1,
-        "canKnockback": true,
-        "attackType": "melee"
-    },
-    "archer" : {
-        "amount": 0,
-        "maxHealth": 1,
-        "canKnockback": true,
-        "attackType": "range",
-        "maxProjectiles": 1,
-        "projectile": arrowImage,
-        "attackAnimationFrames": 13,
-        "projectileAnimationFrames": 2,
-    },
-    "mage" : {
-        "amount": 0,
-        "maxHealth": 1,
-        "canKnockback": true,
-        "attackType": "range",
-        "maxProjectiles": 1,
-        "projectile": fireball,
-        "attackAnimationFrames": 7,
-        "projectileAnimationFrames": 8,
-    },
-}
-
-let enemyTypes = Object.keys(enemyInfo)
 
 let enemyImages = {
     "skeleton":{
@@ -565,9 +533,6 @@ function movePlayer() {
     }
 }
 
-let mouseX, mouseY;
-let playerProjectiles = [];
-
 function handleAttacking() {
     window.addEventListener("click", attack, false);
     if (player.isAttacking) {
@@ -879,6 +844,7 @@ function handleProjectiles() {
                     e.deathCounter = 0;
                     player.score ++;
                 }
+                break;
             }
         }
 
@@ -914,16 +880,52 @@ function attack(event) {
     mouseY = event.clientY;
 }
 
+let enemiesPerLevel = 10;
+let maxEnemiesAtOnce = 5;
+let enemies = [];
+
+let enemyInfo = {
+    "skeleton" : {
+        "amount": 5,
+        "maxHealth": 1,
+        "canKnockback": true,
+        "attackType": "melee"
+    },
+    "archer" : {
+        "amount": 5,
+        "maxHealth": 1,
+        "canKnockback": true,
+        "attackType": "range",
+        "maxProjectiles": 1,
+        "projectile": arrowImage,
+        "attackAnimationFrames": 13,
+        "projectileAnimationFrames": 2,
+    },
+    "mage" : {
+        "amount": 5,
+        "maxHealth": 1,
+        "canKnockback": true,
+        "attackType": "range",
+        "maxProjectiles": 1,
+        "projectile": fireball,
+        "attackAnimationFrames": 7,
+        "projectileAnimationFrames": 8,
+    },
+}
+
+let enemyTypes = Object.keys(enemyInfo)
+let enemySpawnOrder = ["mage", "archer", "skeleton", "mage", "skeleton", "mage"]
+
 function createEnemies() {
-    if (enemies.length < maxEnemyCount) {
+    if (enemies.length < maxEnemiesAtOnce) {
         // generating different types of enemies e.g. skeletons or mages
-        for (let type of enemyTypes) {
+        for (let type of enemySpawnOrder) {
             let enemiesGenerated = 0;
             // generating each enemy for the amount of time they're in the level
             let enemyCounter = enemyInfo[type]["amount"]
             for (let i = 0; i < enemyCounter; i++) {
-                if (enemies.length === maxEnemyCount) break;
-                enemiesGenerated ++
+                if (enemies.length === maxEnemiesAtOnce) break;
+                enemiesGenerated ++;
                 let e = {
                     type: type,
                     health: enemyInfo[type]["maxHealth"],
@@ -951,14 +953,15 @@ function createEnemies() {
                     spawnFrame: 5,
                     spawnCounter: 0,
                     isHit: false,
-                    enemyHitbox: {
-                        x: 0, 
-                        y: 0, 
-                        width: player.width/2, 
-                        height: player.height-12
-                    }
                 }
                 
+                e.enemyHitbox = {
+                    x: 0, 
+                    y: 0, 
+                    width: e.width/2, 
+                    height: e.height-12
+                }
+
                 e.id = enemyId;
                 enemyId ++;
 
@@ -977,7 +980,6 @@ function createEnemies() {
 
                 enemies.push(e)
                 enemiesPerLevel --
-
             }
             // the amount of each enemy type to generate 
             enemyInfo[type]["amount"] -= enemiesGenerated
