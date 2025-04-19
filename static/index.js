@@ -35,7 +35,7 @@ let tilesPerRow = 8;
 let tileSize = 32;
 let backgroundImage = new Image();
 
-let maxPlayerHealth = 1;
+let maxPlayerHealth = 100;
 let player = {
     score: 0,
     health: maxPlayerHealth,
@@ -325,7 +325,7 @@ function draw() {
 
     displayHUD()
 
-    if (enemiesPerLevel > 0 ) {
+    if (enemiesPerLevel > 0 && enemySpawnQueue.length !== 0) {
         createEnemies();
     }
     
@@ -885,16 +885,16 @@ let maxEnemiesAtOnce = 5;
 let enemies = [];
 
 // the order to spawn enemies, e.g. 1 mage then 2 archers then 1 skeleton etc.
-let enemySpawnQueue = ["skeleton 2", "archer 2", "mage 2", "skeleton 2", "archer 2", "mage 2"]
+let enemySpawnQueue = ["skeleton 3", "archer 7", "mage 3"]
 let enemyInfo = {
     "skeleton" : {
-        "amount": 4,
+        "amount": 3,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "melee"
     },
     "archer" : {
-        "amount": 4,
+        "amount": 3,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
@@ -904,7 +904,7 @@ let enemyInfo = {
         "projectileAnimationFrames": 2,
     },
     "mage" : {
-        "amount": 4,
+        "amount": 3,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
@@ -915,11 +915,15 @@ let enemyInfo = {
     },
 }
 
+let breakCheck;
 
 function createEnemies() {
-    if (enemies.length < maxEnemiesAtOnce) {
-        // generating different types of enemies e.g. skeletons or mages
-        for (let nextSpawn of enemySpawnQueue) {
+    breakCheck = false;
+    // console.log(enemySpawnQueue)
+    while (enemies.length < maxEnemiesAtOnce) {
+        if (enemySpawnQueue.length === 0) break;
+        let nextSpawn = enemySpawnQueue[0]
+
             let type; // which enemy to spawn
             let amount; // how many to spawn 
 
@@ -934,70 +938,82 @@ function createEnemies() {
                 type = nextSpawn.slice(0, -3);
             }
             amount = Number(amount);
+            let initialAmount = amount;
 
-            let enemiesToGenerate = enemyInfo[type]["amount"];
+        for (amount; amount > 0; amount --) {
 
-            for (let enemiesGenerated = 0; enemiesGenerated < enemiesToGenerate; enemiesGenerated++) {
-                if (enemies.length === maxEnemiesAtOnce) break;
-                if (enemiesGenerated === amount) break;
-
-                let e = {
-                    type: type,
-                    health: enemyInfo[type]["maxHealth"],
-                    x: 0,
-                    y: 0, 
-                    width: 64,
-                    height: 64,
-                    xChange: 4,
-                    yChange: 4,
-                    frameX: 0,
-                    frameY: 0,
-                    attackFrameX: 0,
-                    attackFrameY: 0,
-                    moveUp: false,
-                    moveLeft: false,
-                    moveDown: false,
-                    moveRight: false,
-                    moveCounter: 0,
-                    isAttacking: false,
-                    attackCounter: 0,
-                    isDying: false,
-                    deathFrame: 0,
-                    deathCounter: 0,
-                    isSpawning: true,
-                    spawnFrame: 5,
-                    spawnCounter: 0,
-                    isHit: false,
-                }
-                
-                e.enemyHitbox = {
-                    x: 0, 
-                    y: 0, 
-                    width: e.width/2, 
-                    height: e.height-12
-                }
-
-                e.id = enemyId;
-                enemyId ++;
-
-                if (enemyInfo[e.type]["attackType"] === "range") {
-                    e.canFire = false;
-                    e.projectileCounter = 0
-                    totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
-                }
-                
-                e.x = randint(256, canvas.width-32-e.width)
-                e.y = randint(52, canvas.height-152-e.height)
-
-                // convert co-ordinates to multiples of 4
-                e.x = (e.x + (4 - e.x%4))
-                e.y = (e.y + (4 - e.y%4))
-                
-                enemies.push(e);
-                enemiesPerLevel --;
-                enemyInfo[type]["amount"] --;
+            let e = {
+                type: type,
+                health: enemyInfo[type]["maxHealth"],
+                x: 0,
+                y: 0, 
+                width: 64,
+                height: 64,
+                xChange: 4,
+                yChange: 4,
+                frameX: 0,
+                frameY: 0,
+                attackFrameX: 0,
+                attackFrameY: 0,
+                moveUp: false,
+                moveLeft: false,
+                moveDown: false,
+                moveRight: false,
+                moveCounter: 0,
+                isAttacking: false,
+                attackCounter: 0,
+                isDying: false,
+                deathFrame: 0,
+                deathCounter: 0,
+                isSpawning: true,
+                spawnFrame: 5,
+                spawnCounter: 0,
+                isHit: false,
             }
+            
+            console.log(e.x, e.y)
+            e.enemyHitbox = {
+                x: e.x+16, 
+                y: e.y+12, 
+                width: e.width/2, 
+                height: e.height-12
+            }
+
+            if (enemyInfo[e.type]["attackType"] === "range") {
+                e.canFire = false;
+                e.projectileCounter = 0
+                totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
+            }
+            
+            e.id = enemyId;
+            enemyId ++;
+            
+            e.x = randint(256, canvas.width-32-e.width);
+            e.y = randint(52, canvas.height-152-e.height);
+
+            // convert co-ordinates to multiples of 4
+            e.x = (e.x + (4 - e.x % 4));
+            e.y = (e.y + (4 - e.y % 4));
+            
+            enemies.push(e);
+            enemiesPerLevel --;
+
+            console.log(type, initialAmount, amount, enemies.length === maxEnemiesAtOnce)
+            if (enemies.length === maxEnemiesAtOnce) {
+                // if (initialAmount === amount) {
+                //     amount --;
+                // }
+                amount = amount.toString();
+                enemySpawnQueue[0] = enemySpawnQueue[0].replace(initialAmount, amount-1)
+                breakCheck = true;
+                break;
+            }
+
         }
+        if (breakCheck) {
+            break;
+        }
+        enemySpawnQueue.shift();
     }
 }
 
@@ -1111,6 +1127,13 @@ function drawEnemies() {
 
 function moveEnemies() {
     for (let e of enemies) {
+        e.enemyHitbox = {
+            x: e.x+16, 
+            y: e.y+12, 
+            width: e.width/2, 
+            height: e.height-12
+        }
+        
         if (e.isHit) {
             if (hitCounter === 15) {
                 e.isHit = false;
@@ -1191,13 +1214,6 @@ function moveEnemies() {
                 e.moveCounter = 0;
                 e.frameX = (e.frameX + 1) % 9;
             }
-        }
-        
-        e.enemyHitbox = {
-            x: e.x+16, 
-            y: e.y+12, 
-            width: e.width/2, 
-            height: e.height-12
         }
     }
 }

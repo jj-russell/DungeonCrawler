@@ -19,6 +19,8 @@ remove projectile delay variables
 extra let e of enemies in enemy projectiles function
 healer enemy
 
+********ranged enemies are immune to arrows sometimes
+
 DONE
 
 score 
