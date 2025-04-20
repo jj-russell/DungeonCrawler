@@ -10,7 +10,7 @@ let request_id;
 let hasCheated = false;
 
 let xChange, yChange, squareSize;
-xChange = yChange = squareSize = 20;
+xChange = yChange = squareSize = 24;
 
 let iFrames = 0;
 let iFrameMax = 45;
@@ -42,7 +42,7 @@ let tilesPerRow = 8;
 let tileSize = 32;
 let backgroundImage = new Image();
 
-let maxPlayerHealth = 1;
+let maxPlayerHealth = 5;
 let player = {
     score: 0,
     health: maxPlayerHealth,
@@ -69,7 +69,8 @@ let player = {
     isHealing: false,
     isCheating: false,
     moveFrameCounter: 0,
-    healthGainFrameCounter: 0
+    healthGainFrameCounter: 0,
+    hasPowerup: false,
 }
 
 let moveLeft, moveRight, moveUp, moveDown;
@@ -119,6 +120,7 @@ let swordAnimation = {
 
 let enemyProjectiles = [];
 let projectileSpeed = 8;
+let projectileDelay = 60;
 let totalProjectiles = 0;
 
 let playerWalk = new Image();
@@ -152,6 +154,8 @@ let deathScreen = new Image();
 let damageImage = new Image();
 let toolbarImage = new Image();
 let healthGainImage = new Image();
+
+let powerupImage = new Image();
 
 let enemyImages = {
     "skeleton":{
@@ -187,15 +191,15 @@ let toolbar = {
 
 let enemyId = 0;
 
-let projectileDelay = 60;
 let time = 0;
 let timeFrameCounter = 30;
-let timer;
 let timerDisplay;
+let timerElement;
 
-let score;
-let highscore;
-let cheats;
+let powerupElement;
+let scoreElement;
+let highscoreElement;
+let cheatsElement;
 let cheatStatus = 'OFF';
 let cheatClass = 'cheats_off';
 
@@ -208,10 +212,12 @@ document.addEventListener("DOMContentLoaded", init, false);
 function init() {
     canvas = document.querySelector("canvas");
     context = canvas.getContext("2d");
-    cheats = document.querySelector("#cheats");
-    score = document.querySelector("#score");
-    timer = document.querySelector("#timer");
-    highscore = document.querySelector("#highscore");
+
+    cheatsElement = document.querySelector("#cheats");
+    scoreElement = document.querySelector("#score");
+    timerElement = document.querySelector("#timer");
+    highscoreElement = document.querySelector("#highscore");
+    powerupElement = document.querySelector("#powerup");
 
     window.addEventListener("keydown", activate, false);
     window.addEventListener("keyup", deactivate, false);
@@ -254,6 +260,7 @@ function init() {
         {"var": damageImage, "url": "static/images/stats/DMG_NUMS.png"},
         {"var": toolbarImage, "url": "static/images/stats/TOOLBAR.png"},
         {"var": healthGainImage, "url": "static/images/stats/HEALTH_GAIN.png"},
+        {"var": powerupImage, "url": "static/images/stats/POWERUPS.png"},
     ], draw)
     
     draw();
@@ -316,6 +323,12 @@ function draw() {
     movePlayer(); 
 
     playerStats();
+
+    // createObstacles();
+
+    createPowerups();
+
+    handlePowerups();
 }
 
 function boundaryLocation() {
@@ -371,13 +384,17 @@ function displayHUD() {
     currentMinute = Math.floor(time/60);
     currentSecond = time % 60;
     currentSecond = ('0'+currentSecond).slice(-2);
-    timerDisplay = `${currentMinute}:${currentSecond}`
 
-    timer.innerHTML = timerDisplay;
-    score.innerHTML = `SCORE: ${player.score}`;
-    highscore.innerHTML = `HIGHSCORE: ${highscore_value}`;
-    cheats.innerHTML = `CHEATS: ${cheatStatus}`;
-    cheats.className = cheatClass;
+    cheatsElement.innerHTML = `CHEATS: ${cheatStatus}`;
+    cheatsElement.className = cheatClass;
+
+    scoreElement.innerHTML = `SCORE: ${player.score}`;
+
+    timerElement.innerHTML = `${currentMinute}:${currentSecond}`;
+
+    highscoreElement.innerHTML = `HIGHSCORE: ${highscore_value}`;
+    
+    powerupElement.innerHTML = `POWERUP: ${powerupTimer}`
 
     context.drawImage(toolbarImage, 0, toolbar.frameY*32, 96, 32,
         0, canvas.height-32, 96, 32)
@@ -503,22 +520,28 @@ function movePlayer() {
         }
     }
         
-    if (! player.isSprinting && player.stamina < staminaBar.max) {
-        if (staminaBar.frameCounter === 5) {
-            player.stamina ++;
-            if (staminaBar.frame > 0 && player.stamina % staminaFrameInterval === 0) {
-                staminaBar.frame --
+    if (! player.isSprinting) {
+        if (!powerupSpeed) {
+            if (player.xChange > 8) {
+                player.xChange -= 1;
+                player.yChange -= 1;
             }
-            staminaBar.frameCounter = 0;
         }
-        else {
-            staminaBar.frameCounter ++;
-        }
-        if (player.xChange > 8) {
-            player.xChange -= 1;
-            player.yChange -= 1;
+
+        if (player.stamina < staminaBar.max) {
+            if (staminaBar.frameCounter === 5) {
+                player.stamina ++;
+                if (staminaBar.frame > 0 && player.stamina % staminaFrameInterval === 0) {
+                    staminaBar.frame --
+                }
+                staminaBar.frameCounter = 0;
+            }
+            else {
+                staminaBar.frameCounter ++;
+            }
         }
     }
+
 }
 
 function handleAttacking() {
@@ -868,12 +891,12 @@ function attack(event) {
     clickY = event.clientY;
 }
 
-let enemiesPerLevel = 20;
-let maxEnemiesAtOnce = 5;
+let enemiesPerLevel = 50;
+let maxEnemiesAtOnce = 50;
 let enemies = [];
 
-// the order to spawn enemies, e.g. 1 mage then 2 archers then 1 skeleton etc.
-let enemySpawnQueue = ["archer 1"];
+// the order to spawn enemies
+let enemySpawnQueue = ["archer 5"];
 let enemyInfo = {
     "skeleton" : {
         "amount": 0,
@@ -975,9 +998,9 @@ function createEnemies() {
             
             e.id = enemyId;
             enemyId ++;
-            
-            e.x = randint(256, canvas.width-32-e.width);
-            e.y = randint(52, canvas.height-152-e.height);
+
+            e.x = randint(boundaryLocation()["left"]*8, boundaryLocation()["right"]-e.width);
+            e.y = randint(boundaryLocation()["up"], boundaryLocation()["down"]-e.height);
 
             // convert co-ordinates to multiples of 4
             e.x = (e.x + (4 - e.x % 4));
@@ -1340,7 +1363,7 @@ function calculateDirection(fromX, fromY, toX, toY) {
 }
 
 function takeDamage() {
-    if (!player.isCheating) {
+    if (!player.isCheating && !powerupInvincibility) {
         if (player.health > 0) {
             iFrames = iFrameMax;
             player.health--;
@@ -1379,12 +1402,6 @@ function playerStats() {
         return;
     }
 }
-
-
-
-// ------------------------------------- \\
-
-
 
 function activate(event) {
     let key = event.key;
@@ -1508,12 +1525,14 @@ function load_assets(assets, callback) {
     }
 }
 
+let obstacles = [];
+let obstaclesAmount = 5;
 
 function createObstacles() {
     while (obstacles.length < obstaclesAmount) {
         let isValid = true;
-        let obX = randint(squareSize, canvas.width - 2*squareSize);
-        let obY = randint(squareSize, canvas.height - 2*squareSize);
+        let obX = randint(boundaryLocation()["left"]*8, boundaryLocation()["right"]-2*squareSize);
+        let obY = randint(boundaryLocation()["up"], boundaryLocation()["down"]-2*squareSize);
 
         if (!(obX % squareSize === 0)) {
             obX = (Math.round(obX / squareSize) * squareSize) + 1;
@@ -1524,13 +1543,6 @@ function createObstacles() {
             obY = (Math.round(obY / squareSize) * squareSize) + 1;
         } else {
             obY++;
-        }
-
-        for (let b of body) { // ensure obstacle doesnt spawn inside player
-            if ((obX + 1 === b.x && obY + 1 === b.y)) {
-                isValid = false;
-                break;
-            }
         }
 
         // obstacles cant spawn near player
@@ -1557,7 +1569,13 @@ function createObstacles() {
             let baseObY = obY;
             
             // Add the initial obstacle
-            let initialOb = { x: obX, y: obY, size: squareSize };
+            let initialOb = {
+                x: obX, 
+                y: obY, 
+                width: squareSize,
+                height: squareSize
+            };
+
             obstacles.push(initialOb);
             
             while (i < numSides) {
@@ -1586,7 +1604,12 @@ function createObstacles() {
                 
                 i++;
                 
-                let o = { x: newObX, y: newObY, size: squareSize };
+                let o = { 
+                    x: newObX, 
+                    y: newObY, 
+                    width: squareSize,
+                    height: squareSize, 
+                };
                 
                 obstacles.push(o);
             }
@@ -1598,60 +1621,134 @@ function createObstacles() {
         context.fillRect(o.x, o.y, o.size, o.size);
 
         if (collides(player, o)) {
-            stop("YOU LOSE");
-            return;
+            if (iFrames === 0) {
+                takeDamage();
+            }
         }
     }
 }
 
-function handleFood() {
-    while (food.length < 1) {
-        let isValid = true;
+let powerups = [];
+let powerupInterval = randint(5, 15);
+let powerupTimer = 0;
+let powerupTimeFrameCounter = 30;
 
-        // max is canvas.width-100 - squareSize rather than canvas.width-100 so the food cant spawn in the borders
-        let foodX = randint(squareSize, canvas.width - 2*squareSize);
-        let foodY = randint(squareSize, canvas.height - 2*squareSize);
+let powerupStarted = false;
+let powerupSpeed = false;
+let powerupHealth = false;
+let powerupDamage = false;
+let powerupInvincibility = false;
 
-        if (!(foodX % squareSize === 0)) {
-            // convert food spawns to a sort of 'grid', they'll always align with the player
-            foodX = (Math.round(foodX / squareSize) * squareSize) + 1;
-        } else {
-            foodX++;
-        }
-        if (!(foodY % squareSize === 0)) {
-            foodY = (Math.round(foodY / squareSize) * squareSize) + 1;
-        } else {
-            foodY++;
-        }
+let normalPlayerDamage = player.damage;
+let normalPlayerBowDamage = player.bowDamage;
 
-        for (let b of body) { // food cant spawn in player
-            if (foodX + 1 === b.x && foodY + 1 === b.y) {
-                isValid = false;
-                break;
+function handlePowerups() {
+    console.log(powerupInterval)
+    if (!powerupDamage) {
+        player.damage = normalPlayerDamage;
+        player.bowDamage = normalPlayerBowDamage;
+    }
+
+    if (player.hasPowerup) {
+        if (!powerupStarted) {
+            for (let pu of powerups) {
+                if (pu.frameX === 0 && pu.frameY === 0) { // sapphire
+                    powerupTimer = 10;
+                    powerupSpeed = true;
+                    player.xChange = player.yChange = 16;
+                }
+                else if (pu.frameX === 0 && pu.frameY === 1) { // ruby
+                    if (toolbar.frameY < maxPotionUses) {
+                        toolbar.frameY ++;
+                    }
+                    powerupTimer = 1;
+                }
+                else if (pu.frameX === 1 && pu.frameY === 0) { // emerald
+                    powerupTimer = 10;
+                    powerupDamage = true;
+                    player.damage ++;
+                    player.bowDamage ++;
+                }
+                else { // diamond
+                    powerupTimer = 5;
+                    powerupInvincibility = true;
+                }
+                powerupStarted = true;
             }
         }
+
+        if (powerupTimer > 0) {
+            if (powerupTimeFrameCounter === 0) {
+                powerupTimer --;
+                powerupTimeFrameCounter = 30;
+                if (powerupTimer === 0) {
+                    player.hasPowerup = false;
+                    powerupStarted = false;
+                    powerupSpeed = powerupHealth = powerupDamage = powerupInvincibility = false;
+                }
+            }
+            else {
+                powerupTimeFrameCounter --;
+            }
+        }
+    }
+}
+
+function createPowerups() {
+    while (powerups.length < 1 && (time % powerupInterval === 0) && (time != 0)) {
+        let isValid = true;
+        // let frameX = randint(0, 1);
+        // let frameY = randint(0, 1);
+        let frameX = 0;
+        let frameY = 1;
+
+        let powerupX = randint(boundaryLocation()["left"], boundaryLocation()["right"]-2*squareSize);
+        let powerupY = randint(boundaryLocation()["up"]+squareSize, boundaryLocation()["down"]-squareSize);
+
+        if (!(powerupX % squareSize === 0)) {
+            powerupX = (Math.round(powerupX / squareSize) * squareSize) + 1;
+        } 
+        else {
+            powerupX++;
+        }
+        if (!(powerupY % squareSize === 0)) {
+            powerupY = (Math.round(powerupY / squareSize) * squareSize) + 1;
+        } 
+        else {
+            powerupY++;
+        }
+
+        let powerup = {
+            x: powerupX,
+            y: powerupY,
+            width: 32,
+            height: 32,
+            frameX: frameX,
+            frameY: frameY,
+        }
     
-        // food cant spawn in obstacles
         for (let o of obstacles) {
-            if (foodX === o.x && foodY === o.y) {
+            if (collides(powerup, o)) {
                 isValid = false;
                 break;
             }
         }
 
         if (isValid) {
-            let f = { x: foodX, y: foodY, size: squareSize };
-            food.push(f);
+            powerups.push(powerup);
         }
     }
 
     context.fillStyle = "red";
-    for (let f of food) {
-        context.fillRect(f.x, f.y, f.size, f.size);
+    for (let pu of powerups) {
+        context.drawImage(powerupImage, pu.frameX*32, pu.frameY*32, pu.width, pu.height,
+            pu.x, pu.y, pu.width, pu.height
+        )
 
-        if (collides(player, f)) {
-            food.pop(f);
-            foodQueue += foodMultiplier;
+        if (collides(player, pu)) {
+            powerups.pop(pu);
+            player.hasPowerup = true;
+            player.score ++;
         }
     }
 }

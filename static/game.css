@@ -33,19 +33,13 @@ header, footer {
 }
 
 #stats {
-    /* background-color: red; */
-    max-width: 840px;
+    max-width: 1000px;
     width: 100%;
     position: relative;
-    right: 60px;
     display: flex;
     justify-content: space-between;
     padding: 10px;
     border-radius: 10px;
-}
-
-#cheats {
-    left: 0px;
 }
 
 #score {
@@ -54,6 +48,10 @@ header, footer {
 
 #timer {
     color: black;
+}
+
+#powerup {
+    color: rgb(112, 164, 241);
 }
 
 #stats > * {
