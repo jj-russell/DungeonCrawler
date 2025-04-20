@@ -3,10 +3,17 @@
 let canvas;
 let context;
 let fpsInterval = 1000 / 30; // the denominator is frames-per-second
-
 let now;
 let then = Date.now();
 let request_id;
+
+let hasCheated = false;
+
+let xChange, yChange, squareSize;
+xChange = yChange = squareSize = 20;
+
+let iFrames = 0;
+let iFrameMax = 45;
 
 let background = [
     [171, 168, 170, 169, 169, 170, 168, 169, 168, 170, 169, 170, 170, 168, 169, 169, 170, 168, 169, 170, 168, 169, 170, 168, 169, 170, 168, 169, 170, 172],
@@ -50,7 +57,10 @@ let player = {
     frameY: 2,
     xChange: 8,
     yChange: 8,
-    attackCounter: 0,
+    swordFrame: 0,
+    bowFrame: 0,
+    bowFrameCounter: 0,
+    attackFrameCounter: 0,
     isAttacking: false,
     isSprinting: false,
     isKilling: false,
@@ -58,20 +68,21 @@ let player = {
     hitFrameCounter: 0,
     isHealing: false,
     isCheating: false,
+    moveFrameCounter: 0,
+    healthGainFrameCounter: 0
 }
-let damageFrame = -1;
 
-let clickX, clickY;
-let playerProjectiles = [];
+let moveLeft, moveRight, moveUp, moveDown;
+moveLeft = moveRight = moveUp = moveDown = false;
 
-let hasCheated = false;
+let playerHitbox = {
+    x: 0, 
+    y: 0, 
+    width: player.width/2, 
+    height: player.height-12
+}
 
-let inventory = ["sword", "bow", "potion"];
-let current_item = 0;
-let showCurrentItem = false;
-let showCurrentItemCounter = 0;
-
-let healthBar = {
+let playerHealthBar = {
     x: player.x,
     y: player.y,
     width: 64,
@@ -86,39 +97,29 @@ let staminaBar = {
     height: 16,
     frame: 0,
     max: player.stamina,
-    counter: 0,
+    frameCounter: 0,
 }
 
-// how often the stamina bar frame updates
-let frameInterval =  staminaBar.max / 5; 
+let staminaFrameInterval = staminaBar.max / 5; // how often the stamina bar frame updates
+
+let inventory = ["sword", "bow", "potion"];
+let current_item = 0;
+let showCurrentItem = false;
+let showCurrentItemCounter = 0;
+let playerProjectiles = [];
+let clickX, clickY;
 
 let swordAnimation = {
     frameX: 0,
     frameY: 0,
-    counter: 0,
+    frameCounter: 0,
     width: 96,
     height: 96,
 }
 
-let projectiles = [];
+let enemyProjectiles = [];
 let projectileSpeed = 8;
 let totalProjectiles = 0;
-
-let playerHitbox = {
-    x: 0, 
-    y: 0, 
-    width: player.width/2, 
-    height: player.height-12
-}
-
-let swordFrame = 0;
-
-let moveCounter = 0;
-
-let deathScreen = new Image();
-let damageImage = new Image();
-let toolbarImage = new Image();
-let healthGainImage = new Image();
 
 let playerWalk = new Image();
 let playerAttack = new Image();
@@ -143,27 +144,14 @@ let mageAttack = new Image();
 let mageDead = new Image();
 let enemyHealthBarImage = new Image();
 
+let arrowImage = new Image();
 let fireball = new Image();
 let icicle = new Image();
-let arrowImage = new Image();
 
-let xChange, yChange, squareSize;
-xChange = yChange = squareSize = 20;
-
-let bowFrame = 0;
-let bowFrameCounter = 0;
-
-// let food = []; 
-// let foodMultiplier = 5;
-// let foodQueue = 0; // add food one at a time
-
-// let obstacles = [];
-// let obstaclesAmount = 50;
-
-let healthGainFrameCounter = 0;
-
-let iFrames = 0;
-let iFrameMax = 45;
+let deathScreen = new Image();
+let damageImage = new Image();
+let toolbarImage = new Image();
+let healthGainImage = new Image();
 
 let enemyImages = {
     "skeleton":{
@@ -190,7 +178,6 @@ let enemyHealthBar = {
 }
 
 let maxPotionUses = 1;
-
 let toolbar = {
     width: 32,
     height: 32,
@@ -198,20 +185,7 @@ let toolbar = {
     frameY: maxPotionUses,
 }
 
-let hitCounter = 0;
-
-// let damageNums = {
-//     takeDmgFrame: 0,
-//     giveDmgFrame: 0,
-// }
-
 let enemyId = 0;
-
-let moveLeft, moveRight, moveUp, moveDown;
-moveLeft = moveRight = moveUp = moveDown = false;
-
-let faceLeft, faceRight, faceUp, faceDown;
-faceLeft = faceRight = faceUp = faceDown = false;
 
 let projectileDelay = 60;
 let time = 0;
@@ -256,6 +230,8 @@ function init() {
         {"var": playerWalk, "url": "static/images/player_animations/PLAYER_WALK.png"},
         {"var": playerAttack, "url": "static/images/player_animations/PLAYER_ATTACK.png"},
         {"var": playerBow, "url": "static/images/player_animations/PLAYER_BOW.png"},
+        {"var": playerHealthBarImage, "url": "static/images/stats/PLAYER_HEALTHBAR.png"},
+        {"var": playerStaminaBarImage, "url": "static/images/stats/STAMINA_BAR.png"},
         {"var": attackUp, "url": "static/images/player_attack/ATTACK_UP.png"},
         {"var": attackDown, "url": "static/images/player_attack/ATTACK_DOWN.png"},
         {"var": attackLeft, "url": "static/images/player_attack/ATTACK_LEFT.png"},
@@ -269,12 +245,10 @@ function init() {
         {"var": mageWalk, "url": "static/images/enemies/mage/MAGE_WALK.png"},
         {"var": mageAttack, "url": "static/images/enemies/mage/MAGE_ATTACK.png"},
         {"var": mageDead, "url": "static/images/enemies/mage/MAGE_DEAD.png"},
+        {"var": enemyHealthBarImage, "url": "static/images/stats/ENEMY_HEALTHBAR.png"},
         {"var": arrowImage, "url": "static/images/enemies/archer/ARROW.png"},
         {"var": fireball, "url": "static/images/enemies/mage/FIREBALL.png"},
         {"var": icicle, "url": "static/images/enemies/mage/ICICLE.png"},
-        {"var": playerHealthBarImage, "url": "static/images/stats/PLAYER_HEALTHBAR.png"},
-        {"var": playerStaminaBarImage, "url": "static/images/stats/STAMINA_BAR.png"},
-        {"var": enemyHealthBarImage, "url": "static/images/stats/ENEMY_HEALTHBAR.png"},
         {"var": deathScreen, "url": "static/images/stats/DEATH_SCREEN.png"},
         {"var": backgroundImage, "url": "static/images/tiles.png"},
         {"var": damageImage, "url": "static/images/stats/DMG_NUMS.png"},
@@ -325,7 +299,7 @@ function draw() {
     handleAttacking();
     for (let e of enemies) {
         if (e.isHit) {
-            context.drawImage(damageImage, damageFrame*24, 0, 24, 16,
+            context.drawImage(damageImage, e.damageFrame*24, 0, 24, 16,
                 e.x+e.width/3, e.y-16, 24, 16)
         }
     }
@@ -479,9 +453,9 @@ function movePlayer() {
     let h =playerHitbox.height
 
     if ((moveLeft || moveRight) && !(moveLeft && moveRight) || (moveUp || moveDown) && !(moveUp && moveDown)) {
-        moveCounter ++
-        if (moveCounter === 2) {
-            moveCounter = 0;
+        player.moveFrameCounter ++;
+        if (player.moveFrameCounter === 2) {
+            player.moveFrameCounter = 0;
             player.frameX = (player.frameX + 1) % 4;
         }
     }
@@ -514,13 +488,13 @@ function movePlayer() {
             player.xChange += 2;
             player.yChange += 2;
             player.stamina --;
-            if (player.stamina % frameInterval === 0 && staminaBar.frame < 5) {
+            if (player.stamina % staminaFrameInterval === 0 && staminaBar.frame < 5) {
                 staminaBar.frame ++
             }
         }
         else if (player.stamina > 0) {
             player.stamina --;
-            if (player.stamina % frameInterval === 0 && staminaBar.frame < 5) {
+            if (player.stamina % staminaFrameInterval === 0 && staminaBar.frame < 5) {
                 staminaBar.frame ++
             }
         }
@@ -530,15 +504,15 @@ function movePlayer() {
     }
         
     if (! player.isSprinting && player.stamina < staminaBar.max) {
-        if (staminaBar.counter === 5) {
+        if (staminaBar.frameCounter === 5) {
             player.stamina ++;
-            if (staminaBar.frame > 0 && player.stamina % frameInterval === 0) {
+            if (staminaBar.frame > 0 && player.stamina % staminaFrameInterval === 0) {
                 staminaBar.frame --
             }
-            staminaBar.counter = 0;
+            staminaBar.frameCounter = 0;
         }
         else {
-            staminaBar.counter ++;
+            staminaBar.frameCounter ++;
         }
         if (player.xChange > 8) {
             player.xChange -= 1;
@@ -599,8 +573,8 @@ function handleAttacking() {
             swordHitbox.animationX, swordHitbox.animationY, swordAnimation.width, swordAnimation.height)
 
             // sword attack animation
-            if (swordAnimation.counter === 1) {
-                swordAnimation.counter = 0;
+            if (swordAnimation.frameCounter === 1) {
+                swordAnimation.frameCounter = 0;
                 if ((swordAnimation.frameY === 1 && swordAnimation.frameX < 3) || (swordAnimation.frameY === 0 && swordAnimation.frameX < 4)) {
                     swordAnimation.frameX ++;
                 }
@@ -616,36 +590,36 @@ function handleAttacking() {
                 }
             }
             else {
-                swordAnimation.counter++;
+                swordAnimation.frameCounter++;
             }
                 
-            context.drawImage(playerAttack, swordFrame*player.width, player.frameY*player.height, player.width, player.height,
+            context.drawImage(playerAttack, player.swordFrame*player.width, player.frameY*player.height, player.width, player.height,
                 player.x, player.y, player.width, player.height);
 
-            player.attackCounter ++;
-            if (player.attackCounter === 3) { 
-                swordFrame ++;
-                player.attackCounter = 0;
+            player.attackFrameCounter ++;
+            if (player.attackFrameCounter === 3) { 
+                player.swordFrame ++;
+                player.attackFrameCounter = 0;
             }
             
             for (let e of enemies) {
                 if (collides(e, swordHitbox) && !e.isDying) {
                     if (! e.isHit) {
-                        if (swordFrame <= 3) {
+                        if (player.swordFrame <= 3) {
                             e.health -= player.damage;
-                            damageFrame = player.damage -1;
+                            e.damageFrame = player.damage -1;
                         }
                         
                         if (e.health <= 0) {
                             e.isDying = true;
                             e.deathFrame = 0;
-                            e.deathCounter = 0;
+                            e.deathFrameCounter = 0;
                             player.score ++;
                         }
                         e.isHit = true;
                     }
 
-                    else if (swordFrame <= 3 && e.isHit && enemyInfo[e.type]["canKnockback"] === true) {
+                    else if (player.swordFrame <= 3 && e.isHit && enemyInfo[e.type]["canKnockback"] === true) {
 
                         // knockback enemies
                         if (player.frameY === 1) { // left
@@ -681,9 +655,9 @@ function handleAttacking() {
                 }
             }
 
-            if (swordFrame === 6) {
+            if (player.swordFrame === 6) {
                 player.isAttacking = false;
-                swordFrame = 0;
+                player.swordFrame = 0;
                 for (let e of enemies) {
                     e.isHit = false;
                 }
@@ -691,14 +665,14 @@ function handleAttacking() {
         }
     
         else if (inventory[current_item] === "bow") {
-            if (bowFrameCounter === 0) {
-                bowFrame = (bowFrame +1) % 13;
-                bowFrameCounter = 2;
+            if (player.bowFrameCounter === 0) {
+                player.bowFrame = (player.bowFrame +1) % 13;
+                player.bowFrameCounter = 2;
             }
-            bowFrameCounter --;
-            context.drawImage(playerBow, bowFrame*player.width, player.frameY*player.height, 64, 64,
+            player.bowFrameCounter --;
+            context.drawImage(playerBow, player.bowFrame*player.width, player.frameY*player.height, 64, 64,
                 player.x, player.y, 64, 64)
-            if (bowFrame === 0) {
+            if (player.bowFrame === 0) {
                 let playerProjectile = {
                     x: player.x,
                     y: player.y,
@@ -716,7 +690,7 @@ function handleAttacking() {
                 playerProjectile.dy = direction.dy
                 playerProjectile.hasFired = true;
                 player.isAttacking = false;
-                bowFrameCounter = 0;
+                player.bowFrameCounter = 0;
             }
         }
         
@@ -725,24 +699,24 @@ function handleAttacking() {
                 player.x, player.y, player.width, player.height);
             if (player.health < maxPlayerHealth && !player.isHealing && toolbar.frameY > 0) {
                 player.health ++;
-                healthBar.frame --;
+                playerHealthBar.frame --;
                 player.isHealing = true;
                 toolbar.frameY --;
             }
 
             if (player.isHealing) {
                 moveUp = moveLeft = moveDown = moveRight = false;
-                if (healthGainFrameCounter < 20) {
+                if (player.healthGainFrameCounter < 20) {
                     context.drawImage(healthGainImage, 0, 0, 24, 12,
                         player.x+player.width/3, player.y-32, 24, 12)
-                    healthGainFrameCounter ++;
+                    player.healthGainFrameCounter ++;
                     
                     context.drawImage(toolbarImage, 64, toolbar.frameY*32, toolbar.width, toolbar.height,
                         player.x+player.width/4, player.y+player.height, toolbar.width, toolbar.height);
                 }
                 else {
                     player.isHealing = false;
-                    healthGainFrameCounter = 0;
+                    player.healthGainFrameCounter = 0;
                 }
             }
             if (! player.isHealing) {
@@ -756,14 +730,14 @@ function handleAttacking() {
         let e = enemies[i];
         if (e.isDying) {
             // remove projectile associated with enemy
-            for (let p of projectiles) {
+            for (let p of enemyProjectiles) {
                 if (e.id === p.id) {
-                    projectiles.splice(projectiles.indexOf(p), 1)
+                    enemyProjectiles.splice(enemyProjectiles.indexOf(p), 1)
                 }
             }
-            e.deathCounter++;
-            if (e.deathCounter === 5) {
-                e.deathCounter = 0;
+            e.deathFrameCounter++;
+            if (e.deathFrameCounter === 5) {
+                e.deathFrameCounter = 0;
                 e.deathFrame++;
                 if (e.deathFrame === 6) {
                     enemies.splice(i, 1);
@@ -849,13 +823,13 @@ function handleProjectiles() {
         for (let e of enemies) {
             if (collides(projectileHitbox, e.enemyHitbox)) {
                 e.health -= player.bowDamage;
-                damageFrame = player.bowDamage -1;
+                e.damageFrame = player.bowDamage -1;
                 playerProjectiles.splice(playerProjectiles.indexOf(p), 1)
                 e.isHit = true;
                 if (e.health <= 0) {
                     e.isDying = true;
                     e.deathFrame = 0;
-                    e.deathCounter = 0;
+                    e.deathFrameCounter = 0;
                     player.score ++;
                 }
                 break;
@@ -899,16 +873,16 @@ let maxEnemiesAtOnce = 5;
 let enemies = [];
 
 // the order to spawn enemies, e.g. 1 mage then 2 archers then 1 skeleton etc.
-let enemySpawnQueue = ["skeleton 5", "archer 2", "skeleton 5"]
+let enemySpawnQueue = ["archer 1"];
 let enemyInfo = {
     "skeleton" : {
-        "amount": 3,
-        "maxHealth": 100,
+        "amount": 0,
+        "maxHealth": 1,
         "canKnockback": true,
         "attackType": "melee"
     },
     "archer" : {
-        "amount": 3,
+        "amount": 0,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
@@ -918,7 +892,7 @@ let enemyInfo = {
         "projectileAnimationFrames": 2,
     },
     "mage" : {
-        "amount": 3,
+        "amount": 0,
         "maxHealth": 1,
         "canKnockback": true,
         "attackType": "range",
@@ -972,16 +946,18 @@ function createEnemies() {
                 moveLeft: false,
                 moveDown: false,
                 moveRight: false,
-                moveCounter: 0,
+                moveFrameCounter: 0,
                 isAttacking: false,
-                attackCounter: 0,
+                attackFrameCounter: 0,
                 isDying: false,
                 deathFrame: 0,
-                deathCounter: 0,
+                deathFrameCounter: 0,
                 isSpawning: true,
                 spawnFrame: 5,
-                spawnCounter: 0,
+                spawnFrameCounter: 0,
                 isHit: false,
+                hitFrameCounter: 0,
+                damageFrame: -1,
             }
             
             e.enemyHitbox = {
@@ -993,7 +969,7 @@ function createEnemies() {
 
             if (enemyInfo[e.type]["attackType"] === "range") {
                 e.canFire = false;
-                e.projectileCounter = 0
+                e.projectileFrameCounter = 0
                 totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
             }
             
@@ -1028,85 +1004,14 @@ function createEnemies() {
     }
 }
 
-// function createEnemies() {
-//     if (enemies.length < maxEnemiesAtOnce) {
-//         // generating different types of enemies e.g. skeletons or mages
-//         for (let type of enemySpawnOrder) {
-//             let enemiesGenerated = 0;
-//             // generating each enemy for the amount of time they're in the level
-//             let enemyCounter = enemyInfo[type]["amount"]
-//             for (let i = 0; i < enemyCounter; i++) {
-//                 if (enemies.length === maxEnemiesAtOnce) break;
-//                 enemiesGenerated ++;
-//                 let e = {
-//                     type: type,
-//                     health: enemyInfo[type]["maxHealth"],
-//                     x: 0,
-//                     y: 0, 
-//                     width: 64,
-//                     height: 64,
-//                     xChange: 4,
-//                     yChange: 4,
-//                     frameX: 0,
-//                     frameY: 0,
-//                     attackFrameX: 0,
-//                     attackFrameY: 0,
-//                     moveUp: false,
-//                     moveLeft: false,
-//                     moveDown: false,
-//                     moveRight: false,
-//                     moveCounter: 0,
-//                     isAttacking: false,
-//                     attackCounter: 0,
-//                     isDying: false,
-//                     deathFrame: 0,
-//                     deathCounter: 0,
-//                     isSpawning: true,
-//                     spawnFrame: 5,
-//                     spawnCounter: 0,
-//                     isHit: false,
-//                 }
-                
-//                 e.enemyHitbox = {
-//                     x: 0, 
-//                     y: 0, 
-//                     width: e.width/2, 
-//                     height: e.height-12
-//                 }
-
-//                 e.id = enemyId;
-//                 enemyId ++;
-
-//                 if (enemyInfo[e.type]["attackType"] === "range") {
-//                     e.canFire = false;
-//                     e.projectileCounter = 0
-//                     totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
-//                 }
-                
-//                 e.x = randint(256, canvas.width-32-e.width)
-//                 e.y = randint(52, canvas.height-152-e.height)
-
-//                 // convert co-ordinates to multiples of 4
-//                 e.x = (e.x + (4 - e.x%4))
-//                 e.y = (e.y + (4 - e.y%4))
-
-//                 enemies.push(e)
-//                 enemiesPerLevel --
-//             }
-//             // the amount of each enemy type to generate 
-//             enemyInfo[type]["amount"] -= enemiesGenerated
-//         }
-//     }
-// }
-
 function drawEnemies() {
     for (let e of enemies) {
         // spawn animation - the reverse of dying animation
         if (e.isSpawning) {
             e.moveUp = e.moveLeft = e.moveDown = e.moveRight = false;
-            e.spawnCounter++;
-            if (e.spawnCounter === 5) {
-                e.spawnCounter = 0;
+            e.spawnFrameCounter++;
+            if (e.spawnFrameCounter === 5) {
+                e.spawnFrameCounter = 0;
                 e.spawnFrame--;
                 if (e.spawnFrame === 0) {  
                     e.isSpawning = false;
@@ -1146,12 +1051,12 @@ function moveEnemies() {
         }
         
         if (e.isHit) {
-            if (hitCounter === 15) {
+            if (e.hitFrameCounter === 15) {
                 e.isHit = false;
-                hitCounter = 0;
+                e.hitFrameCounter = 0;
             }
             else {
-                hitCounter++;
+                e.hitFrameCounter++;
             }
         }
 
@@ -1220,9 +1125,9 @@ function moveEnemies() {
         }
 
         if (e.moveUp || e.moveLeft || e.moveDown || e.moveRight){
-            e.moveCounter ++
-            if (e.moveCounter === 2) {
-                e.moveCounter = 0;
+            e.moveFrameCounter ++
+            if (e.moveFrameCounter === 2) {
+                e.moveFrameCounter = 0;
                 e.frameX = (e.frameX + 1) % 9;
             }
         }
@@ -1253,9 +1158,9 @@ function handleEnemyAttacking() {
                     enemySwordHitbox.x = e.x + e.width/2;
                 }
                 
-                e.attackCounter++;
-                if (e.attackCounter >= 5) {
-                    e.attackCounter = 0;
+                e.attackFrameCounter++;
+                if (e.attackFrameCounter >= 5) {
+                    e.attackFrameCounter = 0;
                     e.attackFrameX++;
                     
                     if (e.attackFrameX === 6 && collides(playerHitbox, enemySwordHitbox)) {
@@ -1271,9 +1176,9 @@ function handleEnemyAttacking() {
                 }
             }
             else if (enemyInfo[e.type]["attackType"] === "range") {
-                e.attackCounter++;
-                if (e.attackCounter >= 5) {
-                    e.attackCounter = 0;
+                e.attackFrameCounter++;
+                if (e.attackFrameCounter >= 5) {
+                    e.attackFrameCounter = 0;
                     e.attackFrameX++;
                     
                     if (e.attackFrameX === enemyInfo[e.type]["attackAnimationFrames"]) {
@@ -1283,8 +1188,8 @@ function handleEnemyAttacking() {
                     }
                 }
                 
-                if ((projectiles.length < totalProjectiles) 
-                    && (e.projectileCounter < enemyInfo[e.type]["maxProjectiles"]) && e.canFire) {
+                if ((enemyProjectiles.length < totalProjectiles) 
+                    && (e.projectileFrameCounter < enemyInfo[e.type]["maxProjectiles"]) && e.canFire) {
                     let p = {
                         id: e.id,
                         hasFired: false,
@@ -1296,8 +1201,8 @@ function handleEnemyAttacking() {
                         frameX: 0,
                         frameY: 0,
                     }
-                    projectiles.push(p);
-                    e.projectileCounter ++;
+                    enemyProjectiles.push(p);
+                    e.projectileFrameCounter ++;
                 }
             }
         }
@@ -1305,7 +1210,7 @@ function handleEnemyAttacking() {
 }
 
 function handleEnemyProjectiles() {
-    for (let p of projectiles) {
+    for (let p of enemyProjectiles) {
         for (let e of enemies) {
             if (p.id === e.id && e.canFire) {
                 if (p.delay != 0) {
@@ -1439,15 +1344,15 @@ function takeDamage() {
         if (player.health > 0) {
             iFrames = iFrameMax;
             player.health--;
-            healthBar.frame ++;
+            playerHealthBar.frame ++;
             player.isHit = true;
         }
     }
 }
 
 function playerStats() {
-    context.drawImage(playerHealthBarImage, 0, healthBar.frame*healthBar.height, healthBar.width, healthBar.height,
-        player.x, player.y-14, healthBar.width, healthBar.height);
+    context.drawImage(playerHealthBarImage, 0, playerHealthBar.frame*playerHealthBar.height, playerHealthBar.width, playerHealthBar.height,
+        player.x, player.y-14, playerHealthBar.width, playerHealthBar.height);
 
     context.drawImage(playerStaminaBarImage, 0, staminaBar.frame*staminaBar.height, staminaBar.width, staminaBar.height,
         player.x, player.y, staminaBar.width, staminaBar.height);
