@@ -35,7 +35,7 @@ let tilesPerRow = 8;
 let tileSize = 32;
 let backgroundImage = new Image();
 
-let maxPlayerHealth = 100;
+let maxPlayerHealth = 1;
 let player = {
     score: 0,
     health: maxPlayerHealth,
@@ -61,7 +61,7 @@ let player = {
 }
 let damageFrame = -1;
 
-let mouseX, mouseY;
+let clickX, clickY;
 let playerProjectiles = [];
 
 let hasCheated = false;
@@ -115,17 +115,6 @@ let swordFrame = 0;
 
 let moveCounter = 0;
 
-let score = {
-    hundredsFrame: 0,
-    tensFrame: 0,
-    oneFrame: 0,
-    width: 136,
-    height: 32,
-    numSize: 32,
-}
-
-let scoreDisplay = new Image();
-let scoreDisplayNums = new Image();
 let deathScreen = new Image();
 let damageImage = new Image();
 let toolbarImage = new Image();
@@ -159,8 +148,6 @@ let fireball = new Image();
 let icicle = new Image();
 let arrowImage = new Image();
 
-let cheatImage = new Image();
-let cheatStatusImage = new Image();
 
 let map = new Image();
 
@@ -215,8 +202,6 @@ let toolbar = {
     frameY: maxPotionUses,
 }
 
-let cheatFrame = 0;
-
 let hitCounter = 0;
 
 // let damageNums = {
@@ -232,13 +217,20 @@ moveLeft = moveRight = moveUp = moveDown = false;
 let faceLeft, faceRight, faceUp, faceDown;
 faceLeft = faceRight = faceUp = faceDown = false;
 
-// let clickX = 0;
-// let clickY = 0;
-// let hasNewClick = false;
-
 let projectileDelay = 60;
 let time = 0;
 let timeFrameCounter = 30;
+let timer;
+let timerDisplay;
+
+let score;
+let highscore;
+let cheats;
+let cheatStatus = 'OFF';
+let cheatClass = 'cheats_off';
+
+let currentMinute;
+let currentSecond;
 
 document.addEventListener("DOMContentLoaded", init, false);
 
@@ -246,6 +238,10 @@ document.addEventListener("DOMContentLoaded", init, false);
 function init() {
     canvas = document.querySelector("canvas");
     context = canvas.getContext("2d");
+    cheats = document.querySelector("#cheats");
+    score = document.querySelector("#score");
+    timer = document.querySelector("#timer");
+    highscore = document.querySelector("#highscore");
 
     window.addEventListener("keydown", activate, false);
     window.addEventListener("keyup", deactivate, false);
@@ -283,15 +279,11 @@ function init() {
         {"var": playerHealthBarImage, "url": "static/images/stats/PLAYER_HEALTHBAR.png"},
         {"var": playerStaminaBarImage, "url": "static/images/stats/STAMINA_BAR.png"},
         {"var": enemyHealthBarImage, "url": "static/images/stats/ENEMY_HEALTHBAR.png"},
-        {"var": scoreDisplay, "url": "static/images/stats/SCORE_DISPLAY.png"},
-        {"var": scoreDisplayNums, "url": "static/images/stats/SCORE_DISPLAY_NUMS.png"},
         {"var": deathScreen, "url": "static/images/stats/DEATH_SCREEN.png"},
         {"var": backgroundImage, "url": "static/images/tiles.png"},
         {"var": damageImage, "url": "static/images/stats/DMG_NUMS.png"},
         {"var": toolbarImage, "url": "static/images/stats/TOOLBAR.png"},
         {"var": healthGainImage, "url": "static/images/stats/HEALTH_GAIN.png"},
-        {"var": cheatImage, "url": "static/images/stats/CHEAT.png"},
-        {"var": cheatStatusImage, "url": "static/images/stats/CHEAT_STATUS.png"},
     ], draw)
     
     draw();
@@ -324,7 +316,6 @@ function draw() {
     }
 
     displayHUD()
-
     if (enemiesPerLevel > 0 && enemySpawnQueue.length !== 0) {
         createEnemies();
     }
@@ -355,14 +346,7 @@ function draw() {
     movePlayer(); 
 
     playerStats();
-
-    if (timeFrameCounter === 0) {
-        time ++;
-        timeFrameCounter = 30;
-    }
-    else {
-        timeFrameCounter --;
-    }
+    console.log(outOfBounds(player.x, player.y))
 }
 
 function outOfBounds(x, y) {
@@ -387,14 +371,27 @@ function outOfBounds(x, y) {
 }
 
 function displayHUD() {
+    if (timeFrameCounter === 0) {
+        time ++;
+        timeFrameCounter = 30;
+    }
+    else {
+        timeFrameCounter --;
+    }
+    
+    currentMinute = Math.floor(time/60);
+    currentSecond = time % 60;
+    currentSecond = ('0'+currentSecond).slice(-2);
+    timerDisplay = `${currentMinute}:${currentSecond}`
+
+    timer.innerHTML = timerDisplay;
+    score.innerHTML = `SCORE: ${player.score}`;
+    highscore.innerHTML = `HIGHSCORE: ${highscore_value}`;
+    cheats.innerHTML = `CHEATS: ${cheatStatus}`;
+    cheats.className = cheatClass;
+
     context.drawImage(toolbarImage, 0, toolbar.frameY*32, 96, 32,
         0, canvas.height-32, 96, 32)
-        
-    context.drawImage(cheatImage, 0, cheatFrame*32, 160, 32,
-        canvas.width/2-160, canvas.height-32, 160, 32)
-
-    context.drawImage(cheatStatusImage, 0, cheatFrame*32, 80, 32,
-        canvas.width/2+2, canvas.height-32, 80, 32)
 
     if (showCurrentItem) {
         context.drawImage(toolbarImage, toolbar.frameX*32, toolbar.frameY*32, toolbar.width, toolbar.height,
@@ -413,11 +410,13 @@ function enableCheats(event) {
         if (! player.isCheating) {
             hasCheated = true;
             player.isCheating = true;
-            cheatFrame ++;
+            cheatStatus = 'ON';
+            cheatClass = 'cheats_on';
         }
         else {
             player.isCheating = false;
-            cheatFrame --;
+            cheatStatus = 'OFF';
+            cheatClass = 'cheats_off';
         }
     }
 }
@@ -697,7 +696,7 @@ function handleAttacking() {
                     frameY: 0,
                 }
                 playerProjectiles.push(playerProjectile)
-                let direction = calculateDirection(player.x+player.width/2, player.y+player.height/2, mouseX, mouseY);
+                let direction = calculateDirection(player.x+player.width/2, player.y+player.height/2, clickX, clickY);
                 playerProjectile.dx = direction.dx
                 playerProjectile.dy = direction.dy
                 playerProjectile.hasFired = true;
@@ -876,8 +875,8 @@ function attack(event) {
     if (!player.isAttacking) {
         player.isAttacking = true;
     }
-    mouseX = event.clientX;
-    mouseY = event.clientY;
+    clickX = event.clientX;
+    clickY = event.clientY;
 }
 
 let enemiesPerLevel = 20;
@@ -885,7 +884,7 @@ let maxEnemiesAtOnce = 5;
 let enemies = [];
 
 // the order to spawn enemies, e.g. 1 mage then 2 archers then 1 skeleton etc.
-let enemySpawnQueue = ["skeleton 3", "archer 7", "mage 3"]
+let enemySpawnQueue = ["skeleton 5", "archer 2", "skeleton 5"]
 let enemyInfo = {
     "skeleton" : {
         "amount": 3,
@@ -919,7 +918,6 @@ let breakCheck;
 
 function createEnemies() {
     breakCheck = false;
-    // console.log(enemySpawnQueue)
     while (enemies.length < maxEnemiesAtOnce) {
         if (enemySpawnQueue.length === 0) break;
         let nextSpawn = enemySpawnQueue[0]
@@ -971,7 +969,6 @@ function createEnemies() {
                 isHit: false,
             }
             
-            console.log(e.x, e.y)
             e.enemyHitbox = {
                 x: e.x+16, 
                 y: e.y+12, 
@@ -998,7 +995,6 @@ function createEnemies() {
             enemies.push(e);
             enemiesPerLevel --;
 
-            console.log(type, initialAmount, amount, enemies.length === maxEnemiesAtOnce)
             if (enemies.length === maxEnemiesAtOnce) {
                 // if (initialAmount === amount) {
                 //     amount --;
@@ -1453,25 +1449,6 @@ function playerStats() {
     else if (player.isHit) {
         player.hitFrameCounter ++;
     }
-    
-    // "score:"
-    context.drawImage(scoreDisplay, 0, 0, score.width, score.height,
-        canvas.width-2*score.width, canvas.height-score.height, score.width, score.height);
-
-    // ones digit
-    score.oneFrame = player.score % 10
-    context.drawImage(scoreDisplayNums, score.oneFrame*score.numSize, 0, score.numSize, score.numSize,
-        canvas.width-2*score.width+(score.width+2*score.numSize)-16, canvas.height-score.numSize, score.numSize, score.numSize);
-    
-    // tens digit
-    score.tensFrame = Math.floor((player.score%100)/10)
-    context.drawImage(scoreDisplayNums, score.tensFrame*score.numSize, 0, score.numSize, score.numSize,
-        canvas.width-2*score.width+(score.width+score.numSize)-8, canvas.height-score.numSize, score.numSize, score.numSize);
-
-    // hundreds digit
-    score.hundredsFrame = Math.floor(player.score/100)
-    context.drawImage(scoreDisplayNums, score.hundredsFrame*score.numSize, 0, score.numSize, score.numSize,
-        canvas.width-2*score.width+score.width, canvas.height-score.height, score.numSize, score.numSize);
 
     if (iFrames > 0) iFrames -= 1;
 

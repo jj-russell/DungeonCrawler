@@ -32,7 +32,12 @@ def index():
 @app.route("/game", methods=["GET", "POST"])
 @login_required
 def game():
-    return render_template("game.html", title="Game")
+    db = get_db()
+    highscore = db.execute("""SELECT score FROM users
+                              WHERE user = ?;""", (g.user,)).fetchone()
+    highscore = highscore["score"]
+
+    return render_template("game.html", title="Game", highscore=highscore)
 
 @app.route("/store_score", methods=["GET", "POST"])
 @login_required

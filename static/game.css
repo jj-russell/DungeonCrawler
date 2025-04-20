@@ -23,3 +23,39 @@ main {
 header, footer {
     display: none;
 }
+
+.cheats_off {
+    color: #AE0000;
+}
+
+.cheats_on {
+    color: #00BB00;
+}
+
+#stats {
+    /* background-color: red; */
+    max-width: 840px;
+    width: 100%;
+    position: relative;
+    right: 60px;
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    border-radius: 10px;
+}
+
+#cheats {
+    left: 0px;
+}
+
+#score {
+    color: rgb(184, 142, 38);
+}
+
+#timer {
+    color: black;
+}
+
+#stats > * {
+    margin: 0;
+}

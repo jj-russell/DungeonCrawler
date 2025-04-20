@@ -5,5 +5,15 @@
     {% endblock %}
 {% block main_content %}
         <canvas width="960" height="640px"></canvas>
-        <!-- <p><a href="{{url_for('index')}}">Main Menu</a></p> -->
+            <section id="stats">
+                <p id="cheats"></p>
+                <p id="score"></p>
+                <p id="timer"></p>
+                <p id="highscore"></p>
+            </section>
+
+        <script>
+            let highscore_value = '{{ highscore|tojson|safe }}'
+            highscore_value = JSON.parse(highscore_value);
+        </script>
 {% endblock %}
