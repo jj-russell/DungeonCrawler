@@ -121,7 +121,7 @@ let toolbarImage = new Image();
 let healthGainImage = new Image();
 
 let playerWalk = new Image();
-let playerSlash = new Image();
+let playerAttack = new Image();
 let playerBow = new Image();
 let playerHealthBarImage = new Image();
 let playerStaminaBarImage = new Image();
@@ -132,24 +132,20 @@ let attackLeft = new Image();
 let attackRight = new Image();
 let attackImage;
 
-let enemyHealthBarImage = new Image();
-
 let skeletonWalk = new Image();
-let skeletonSlash = new Image();
+let skeletonAttack = new Image();
 let skeletonDead = new Image();
 let archerWalk = new Image();
 let archerAttack = new Image();
 let archerDead = new Image();
 let mageWalk = new Image();
-let mageCast = new Image();
+let mageAttack = new Image();
 let mageDead = new Image();
+let enemyHealthBarImage = new Image();
 
 let fireball = new Image();
 let icicle = new Image();
 let arrowImage = new Image();
-
-
-let map = new Image();
 
 let xChange, yChange, squareSize;
 xChange = yChange = squareSize = 20;
@@ -172,17 +168,17 @@ let iFrameMax = 45;
 let enemyImages = {
     "skeleton":{
         "walk" : skeletonWalk,
-        "slash" : skeletonSlash,
+        "attack" : skeletonAttack,
         "dead" : skeletonDead,
     },
     "archer":{
         "walk" : archerWalk,
-        "slash" : archerAttack,
+        "attack" : archerAttack,
         "dead" : archerDead,
     },
     "mage":{
         "walk" : mageWalk,
-        "slash" : mageCast,
+        "attack" : mageAttack,
         "dead" : mageDead,
     },
 }
@@ -258,20 +254,20 @@ function init() {
 
     load_assets([
         {"var": playerWalk, "url": "static/images/player_animations/PLAYER_WALK.png"},
-        {"var": playerSlash, "url": "static/images/player_animations/PLAYER_SLASH.png"},
+        {"var": playerAttack, "url": "static/images/player_animations/PLAYER_ATTACK.png"},
         {"var": playerBow, "url": "static/images/player_animations/PLAYER_BOW.png"},
         {"var": attackUp, "url": "static/images/player_attack/ATTACK_UP.png"},
         {"var": attackDown, "url": "static/images/player_attack/ATTACK_DOWN.png"},
         {"var": attackLeft, "url": "static/images/player_attack/ATTACK_LEFT.png"},
         {"var": attackRight, "url": "static/images/player_attack/ATTACK_RIGHT.png"},
         {"var": skeletonWalk, "url": "static/images/enemies/skeleton/SKELETON_WALK.png"},
-        {"var": skeletonSlash, "url": "static/images/enemies/skeleton/SKELETON_SLASH.png"},
+        {"var": skeletonAttack, "url": "static/images/enemies/skeleton/SKELETON_ATTACK.png"},
         {"var": skeletonDead, "url": "static/images/enemies/skeleton/SKELETON_DEAD.png"},
         {"var": archerWalk, "url": "static/images/enemies/archer/ARCHER_WALK.png"},
         {"var": archerAttack, "url": "static/images/enemies/archer/ARCHER_ATTACK.png"},
         {"var": archerDead, "url": "static/images/enemies/archer/ARCHER_DEAD.png"},
         {"var": mageWalk, "url": "static/images/enemies/mage/MAGE_WALK.png"},
-        {"var": mageCast, "url": "static/images/enemies/mage/MAGE_CAST.png"},
+        {"var": mageAttack, "url": "static/images/enemies/mage/MAGE_ATTACK.png"},
         {"var": mageDead, "url": "static/images/enemies/mage/MAGE_DEAD.png"},
         {"var": arrowImage, "url": "static/images/enemies/archer/ARROW.png"},
         {"var": fireball, "url": "static/images/enemies/mage/FIREBALL.png"},
@@ -346,7 +342,21 @@ function draw() {
     movePlayer(); 
 
     playerStats();
-    console.log(outOfBounds(player.x, player.y))
+}
+
+function boundaryLocation() {
+    let leftBoundary = 32;
+    let rightBoundary = canvas.width-32;
+    let upBoundary = 52;
+    let downBoundary = canvas.height-132;
+    let boundaryValues = {
+        "left": leftBoundary, 
+        "right": rightBoundary,
+        "up": upBoundary,
+        "down": downBoundary
+    };
+
+    return boundaryValues;
 }
 
 function outOfBounds(x, y) {
@@ -354,20 +364,25 @@ function outOfBounds(x, y) {
     let rightBoundary = canvas.width-32;
     let upBoundary = 52;
     let downBoundary = canvas.height-132;
-    
+    let boundaries = [];
+
     if (x <= leftBoundary) {
-        return ["left", leftBoundary];
+        boundaries.push("left");
     }
-    else if (x >= rightBoundary) {
-        return ["right", rightBoundary];
+    if (x >= rightBoundary) {
+        boundaries.push("right");
     }
-    else if (y <= upBoundary) {
-        return ["up", upBoundary];
+    if (y <= upBoundary) {
+        boundaries.push("up");
     }
-    else if (y >= downBoundary) {
-        return ["down", downBoundary];
+    if (y >= downBoundary) {
+        boundaries.push("down");
     }
-    return "false";
+    
+    if (boundaries.length === 0) {
+        return "false";
+    }
+    return boundaries;
 }
 
 function displayHUD() {
@@ -583,7 +598,7 @@ function handleAttacking() {
             swordAnimation.frameX*swordAnimation.width, swordAnimation.frameY*swordAnimation.height, swordAnimation.width, swordAnimation.height,
             swordHitbox.animationX, swordHitbox.animationY, swordAnimation.width, swordAnimation.height)
 
-            // sword slash animation
+            // sword attack animation
             if (swordAnimation.counter === 1) {
                 swordAnimation.counter = 0;
                 if ((swordAnimation.frameY === 1 && swordAnimation.frameX < 3) || (swordAnimation.frameY === 0 && swordAnimation.frameX < 4)) {
@@ -604,7 +619,7 @@ function handleAttacking() {
                 swordAnimation.counter++;
             }
                 
-            context.drawImage(playerSlash, swordFrame*player.width, player.frameY*player.height, player.width, player.height,
+            context.drawImage(playerAttack, swordFrame*player.width, player.frameY*player.height, player.width, player.height,
                 player.x, player.y, player.width, player.height);
 
             player.attackCounter ++;
@@ -650,17 +665,17 @@ function handleAttacking() {
                         let h = e.enemyHitbox.height;
 
                         // prevent enemies from being knocked out of bounds
+                        if (outOfBounds(e.x+w/2, e.y).includes("left")) {
+                            e.x = boundaryLocation()["left"] - w/2;
+                        }
                         if (outOfBounds(e.x+w, e.y).includes("right")) {
-                            e.x = outOfBounds(e.x+w, e.y)[1] - w
+                            e.x = boundaryLocation()["right"] - w;
                         }
-                        else if (outOfBounds(e.x+w/2, e.y).includes("left")) {
-                            e.x = outOfBounds(e.x+w/2, e.y)[1] - w/2;
+                        if (outOfBounds(e.x, e.y+h).includes("down")) {
+                            e.y = boundaryLocation()["down"] - h;
                         }
-                        else if (outOfBounds(e.x, e.y+h).includes("down")) {
-                            e.y = outOfBounds(e.x, e.y+h)[1] - h;
-                        }
-                        else if (outOfBounds(e.x, e.y+h/2).includes("up")) { // top border
-                            e.y = outOfBounds(e.x, e.y+h/2)[1] - h/3;
+                        if (outOfBounds(e.x, e.y+h/2).includes("up")) { // top border
+                            e.y = boundaryLocation()["up"] - h/3;
                         }
                     }
                 }
@@ -854,8 +869,8 @@ function handleProjectiles() {
             let h = projectileHitbox.height;
 
             // projectile reaches the edge
-            if ((outOfBounds(x,y).includes("left")) || ((outOfBounds(x,y+h).includes("down"))) || 
-                (outOfBounds(x,y).includes("up")) || ((outOfBounds(x+w,y).includes("right")))) {
+            if ((outOfBounds(x, y).includes("left")) || ((outOfBounds(x,y+h).includes("down"))) || 
+                (outOfBounds(x, y).includes("up")) || ((outOfBounds(x+w,y).includes("right")))) {
                     playerProjectiles.splice(playerProjectiles.indexOf(p), 1)
                     projectileHitbox.x = player.x;
                     projectileHitbox.y = player.y;
@@ -888,7 +903,7 @@ let enemySpawnQueue = ["skeleton 5", "archer 2", "skeleton 5"]
 let enemyInfo = {
     "skeleton" : {
         "amount": 3,
-        "maxHealth": 1,
+        "maxHealth": 100,
         "canKnockback": true,
         "attackType": "melee"
     },
@@ -1107,7 +1122,7 @@ function drawEnemies() {
                             e.x, e.y, e.width, e.height);
 
         } else if (e.isAttacking) {
-            context.drawImage(enemyImages[e.type]["slash"], e.attackFrameX*e.width, e.frameY*e.height, e.width, e.height,
+            context.drawImage(enemyImages[e.type]["attack"], e.attackFrameX*e.width, e.frameY*e.height, e.width, e.height,
                             e.x, e.y, e.width, e.height);
         } else {
             context.drawImage(enemyImages[e.type]["walk"], e.frameX*e.width, e.frameY*e.height, e.width, e.height,
@@ -1378,8 +1393,8 @@ function handleEnemyProjectiles() {
                 let h = projectileHitbox.height;
 
                 // projectile reaches the edge
-                if ((outOfBounds(x,y).includes("left")) || ((outOfBounds(x,y+h).includes("down"))) || 
-                    (outOfBounds(x,y).includes("up")) || ((outOfBounds(x+w,y).includes("right")))) {
+                if ((outOfBounds(x, y).includes("left")) || ((outOfBounds(x,y+h).includes("down"))) || 
+                    (outOfBounds(x, y).includes("up")) || ((outOfBounds(x+w,y).includes("right")))) {
                     for (let e of enemies) {
                         // relate projectile to the enemy that fired it, delay between each fire, can't fire while moving
                         if (e.id === p.id && p.delay === 0 && !(e.moveUp || e.moveLeft || e.moveDown || e.moveRight)) {
