@@ -1,4 +1,5 @@
-// import levels from './levels.js';
+import levels from './levels.js';
+let currentLevel = 0;
 
 let canvas;
 let context;
@@ -15,28 +16,24 @@ xChange = yChange = squareSize = 24;
 let iFrames = 0;
 let iFrameMax = 45;
 
-let background = [
-    [171, 168, 170, 169, 169, 170, 168, 169, 168, 170, 169, 170, 170, 168, 169, 169, 170, 168, 169, 170, 168, 169, 170, 168, 169, 170, 168, 169, 170, 172],
-    [149, 129, 176, 177, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 148],
-    [157, 140, 184, 185, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 156],
-    [165, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 164],
-    [149, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 148],
-    [157, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 156],
-    [165, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 164],
-    [149, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 148],
-    [157, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 156],
-    [165, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 164],
-    [149, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 148],
-    [157, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 156],
-    [165, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 164],
-    [149, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 148],
-    [157, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 156],
-    [165, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 164],
-    [149, 133, 134, 135, 133, 134, 135, 133, 134, 135, 133, 134, 135, 133, 134, 135, 133, 134, 135, 133, 134, 135, 176, 177, 133, 134, 135, 133, 134, 148],
-    [157, 141, 142, 143, 141, 142, 143, 141, 142, 143, 141, 142, 143, 141, 142, 143, 141, 142, 143, 141, 142, 143, 184, 185, 143, 141, 142, 143, 141, 156],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,- 1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-    [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,- 1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
-]
+let door1 = [176, 177, 184, 185];
+let door2 = [176, 177, 184, 185];
+
+let door1_0;
+let door1_1;
+let door1_2;
+let door1_3;
+
+let door2_0;
+let door2_1;
+let door2_2;
+let door2_3;
+
+let doorsOpened = false;
+
+function openDoor(arr) {
+    return arr.map(value => value + 2);
+}
 
 let tilesPerRow = 8;
 let tileSize = 32;
@@ -101,6 +98,14 @@ let staminaBar = {
     frameCounter: 0,
 }
 
+let maxPotionUses = 1;
+let toolbar = {
+    width: 32,
+    height: 32,
+    frameX: 0,
+    frameY: maxPotionUses,
+}
+
 let staminaFrameInterval = staminaBar.max / 5; // how often the stamina bar frame updates
 
 let inventory = ["sword", "bow", "potion"];
@@ -150,7 +155,6 @@ let arrowImage = new Image();
 let fireball = new Image();
 let icicle = new Image();
 
-let deathScreen = new Image();
 let damageImage = new Image();
 let toolbarImage = new Image();
 let healthGainImage = new Image();
@@ -181,31 +185,30 @@ let enemyHealthBar = {
     frame: 10
 }
 
-let maxPotionUses = 1;
-let toolbar = {
-    width: 32,
-    height: 32,
-    frameX: 0,
-    frameY: maxPotionUses,
-}
+let enemySpawnQueue = levels[currentLevel]["enemySpawnQueue"];
 
 let enemyId = 0;
 
 let time = 0;
 let timeFrameCounter = 30;
-let timerDisplay;
 let timerElement;
 
+let levelElement;
 let powerupElement;
 let powerupMessage = `POWERUP: NONE`;
 let scoreElement;
 let highscoreElement;
 let cheatsElement;
 let cheatStatus = 'OFF';
-let cheatClass = 'cheats_off';
+let cheatClass = 'red';
+let endElement;
 
 let currentMinute;
 let currentSecond;
+
+let resultElement;
+let levelComplete;
+let exit;
 
 document.addEventListener("DOMContentLoaded", init, false);
 
@@ -214,11 +217,14 @@ function init() {
     canvas = document.querySelector("canvas");
     context = canvas.getContext("2d");
 
+    levelElement = document.querySelector("#level");
+    powerupElement = document.querySelector("#powerup");
     cheatsElement = document.querySelector("#cheats");
     scoreElement = document.querySelector("#score");
     timerElement = document.querySelector("#timer");
     highscoreElement = document.querySelector("#highscore");
-    powerupElement = document.querySelector("#powerup");
+    resultElement = document.querySelector("#result");
+    endElement = document.querySelector("#end");
 
     window.addEventListener("keydown", activate, false);
     window.addEventListener("keyup", deactivate, false);
@@ -230,7 +236,13 @@ function init() {
         event.preventDefault();
     });
 
-    player.x = 64;
+    exit = {
+        x: canvas.width/2-16,
+        y: boundaryLocation()["down"],
+        width: 32,
+        height: 64,
+    }
+    player.x = canvas.width/2-32;
     player.y = 64;
 
     load_assets([
@@ -256,7 +268,6 @@ function init() {
         {"var": arrowImage, "url": "static/images/enemies/archer/ARROW.png"},
         {"var": fireball, "url": "static/images/enemies/mage/FIREBALL.png"},
         {"var": icicle, "url": "static/images/enemies/mage/ICICLE.png"},
-        {"var": deathScreen, "url": "static/images/stats/DEATH_SCREEN.png"},
         {"var": backgroundImage, "url": "static/images/tiles.png"},
         {"var": damageImage, "url": "static/images/stats/DMG_NUMS.png"},
         {"var": toolbarImage, "url": "static/images/stats/TOOLBAR.png"},
@@ -276,28 +287,16 @@ function draw() {
     }
     then = now - (elapsed % fpsInterval);
 
-    // background
-    context.fillStyle = "black";
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    for (let r = 0; r < 20; r++) {
-        for (let c = 0; c < 30; c++) {
-            let tile = background[r][c];
-            if (tile >= 0) {
-                let tileRow = Math.floor(tile / tilesPerRow);
-                let tileCol = Math.floor(tile % tilesPerRow);
-                context.drawImage(backgroundImage,
-                    tileCol * tileSize, tileRow * tileSize, tileSize, tileSize,
-                    c * tileSize, r * tileSize, tileSize, tileSize
-                )
-            }
-        }
-    }
+    levelComplete = (enemySpawnQueue.length === 0 && enemies.length === 0);
+
+    displayMap();
 
     displayHUD()
+
     if (enemiesPerLevel > 0 && enemySpawnQueue.length !== 0) {
         createEnemies();
     }
-    
+
     // draw player 
     if (! player.isAttacking) {
         context.drawImage(playerWalk, player.frameX*player.width, player.frameY*player.height, player.width, player.height,
@@ -305,12 +304,7 @@ function draw() {
     }
     
     handleAttacking();
-    for (let e of enemies) {
-        if (e.isHit) {
-            context.drawImage(damageImage, e.damageFrame*24, 0, 24, 16,
-                e.x+e.width/3, e.y-16, 24, 16)
-        }
-    }
+
     handleEnemyAttacking();
 
     drawEnemies();
@@ -330,6 +324,80 @@ function draw() {
     createPowerups();
 
     handlePowerups();
+}
+
+function displayMap() {
+    let background = [
+        [171, 168, 170, 169, 169, 170, 168, 169, 168, 170, 169, 170, 170, 168, 169, 169, 170, 168, 169, 170, 168, 169, 170, 168, 169, 170, 168, 169, 170, 172],
+        [149, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, door1_0, door1_1, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 130, 128, 129, 148],
+        [157, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, door1_2, door1_3, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 141, 139, 140, 156],
+        [165, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 50, 51, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 164],
+        [149, 1, 1, 1, 1, 1, 1, 31, 28, 1, 1, 1, 1, 1, 50, 51, 1, 1, 1, 1, 7, 15, 1, 21, 1, 1, 1, 1, 1, 148],
+        [157, 1, 21, 1, 1, 1, 1, 22, 31, 1, 1, 1, 1, 1, 60, 61, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 156],
+        [165, 1, 1, 24, 1, 1, 1, 1, 60, 41, 48, 40, 48, 41, 56, 57, 48, 48, 40, 41, 41, 61, 1, 1, 1, 1, 1, 1, 1, 164],
+        [149, 1, 1, 7, 1, 1, 1, 1, 48, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 49, 1, 1, 1, 1, 1, 1, 1, 148],
+        [157, 1, 1, 1, 1, 1, 1, 1, 41, 1, 1, 1, 1, 1, 1, 12, 11, 1, 1, 1, 1, 40, 1, 1, 1, 1, 1, 1, 1, 156],
+        [165, 49, 41, 48, 41, 40, 49, 48, 40, 1, 21, 1, 1, 1, 1, 13, 30, 1, 1, 1, 1, 40, 41, 49, 33, 41, 40, 48, 49, 164],
+        [149, 1, 1, 1, 1, 1, 1, 1, 49, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 41, 15, 1, 1, 1, 1, 1, 1, 148],
+        [157, 1, 1, 1, 1, 1, 1, 1, 33, 1, 1, 1, 1, 1, 1, 15, 1, 1, 1, 1, 1, 40, 1, 1, 1, 1, 1, 1, 1, 156],
+        [165, 1, 1, 1, 1, 1, 1, 1, 57, 41, 48, 49, 40, 41, 61, 60, 48, 41, 40, 41, 40, 56, 23, 1, 1, 1, 1, 1, 1, 164],
+        [149, 1, 7, 10, 1, 21, 1, 1, 1, 1, 1, 1, 1, 1, 57, 56, 1, 1, 1, 1, 1, 1, 1, 1, 1, 5, 7, 8, 1, 148],
+        [157, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 50, 51, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6, 11, 7, 156],
+        [165, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 50, 51, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 8, 164],
+        [149, 133, 134, 135, 133, 134, 135, 133, 134, 135, 133, 134, 135, 133, door2_0, door2_1, 133, 134, 135, 133, 134, 135, 133, 134, 135, 133, 134, 135, 133, 148],
+        [157, 141, 142, 143, 141, 142, 143, 141, 142, 143, 141, 142, 143, 141, door2_2, door2_3, 141, 142, 143, 141, 142, 143, 141, 142, 143, 141, 142, 143, 141, 156],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,- 1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+        [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,- 1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+    ]
+
+    door1_0 = door1[0];
+    door1_1 = door1[1];
+    door1_2 = door1[2];
+    door1_3 = door1[3];
+    door2_0 = door2[0];
+    door2_1 = door2[1];
+    door2_2 = door2[2];
+    door2_3 = door2[3];
+
+    // background
+    context.fillStyle = "black";
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    for (let r = 0; r < 20; r++) {
+        for (let c = 0; c < 30; c++) {
+            let tile = background[r][c];
+            if (tile >= 0) {
+                let tileRow = Math.floor(tile / tilesPerRow);
+                let tileCol = Math.floor(tile % tilesPerRow);
+                context.drawImage(backgroundImage,
+                    tileCol * tileSize, tileRow * tileSize, tileSize, tileSize,
+                    c * tileSize, r * tileSize, tileSize, tileSize
+                )
+            }
+        }
+    }
+    
+    if (levelComplete) {
+        endOfLevel();
+    }
+}
+
+function endOfLevel() {
+    if (!doorsOpened) {
+        doorsOpened = true;
+        door2 = openDoor(door2);
+    }
+    if (collides(player, exit)) {
+        updateLevel();
+        player.x = canvas.width/2 -32;
+        player.y = 64;
+        levelComplete = false;
+    }
+}
+
+function updateLevel() {
+    currentLevel ++;
+    player.score += 100;
+    enemySpawnQueue = levels[currentLevel]["enemySpawnQueue"];
 }
 
 function boundaryLocation() {
@@ -381,21 +449,22 @@ function displayHUD() {
     else {
         timeFrameCounter --;
     }
-    
-    currentMinute = Math.floor(time/60);
-    currentSecond = time % 60;
-    currentSecond = ('0'+currentSecond).slice(-2);
+
+    levelElement.innerHTML = `LEVEL ${currentLevel+1}`
+
+    powerupElement.innerHTML = powerupMessage;
 
     cheatsElement.innerHTML = `CHEATS: ${cheatStatus}`;
     cheatsElement.className = cheatClass;
 
     scoreElement.innerHTML = `SCORE: ${player.score}`;
 
+    currentMinute = Math.floor(time/60);
+    currentSecond = time % 60;
+    currentSecond = ('0'+currentSecond).slice(-2);
     timerElement.innerHTML = `${currentMinute}:${currentSecond}`;
 
     highscoreElement.innerHTML = `HIGHSCORE: ${highscore_value}`;
-    
-    powerupElement.innerHTML = powerupMessage;
 
     context.drawImage(toolbarImage, 0, toolbar.frameY*32, 96, 32,
         0, canvas.height-32, 96, 32)
@@ -418,12 +487,12 @@ function enableCheats(event) {
             hasCheated = true;
             player.isCheating = true;
             cheatStatus = 'ON';
-            cheatClass = 'cheats_on';
+            cheatClass = 'green';
         }
         else {
             player.isCheating = false;
             cheatStatus = 'OFF';
-            cheatClass = 'cheats_off';
+            cheatClass = 'red';
         }
     }
 }
@@ -479,21 +548,21 @@ function movePlayer() {
     }
     
     if ( !(moveLeft && moveRight) && !(moveUp && moveDown)) {
-        if (moveUp && !(outOfBounds(x, y).includes("up"))) {
-            player.y -= player.yChange;
-            player.frameY = 0;
-        }
         if (moveLeft && !(outOfBounds(x, y).includes("left"))) {
             player.x -= player.xChange;
             player.frameY = 1;
         }
-        if (moveDown && !(outOfBounds(x, y+h).includes("down"))) {
-            player.y += player.yChange;
-            player.frameY = 2;
-        }
         if (moveRight && !(outOfBounds(x+w, y).includes("right"))) {
             player.x += player.xChange;
             player.frameY = 3;
+        }
+        if (moveUp && !(outOfBounds(x, y).includes("up"))) {
+            player.y -= player.yChange;
+            player.frameY = 0;
+        }
+        if (moveDown && !(outOfBounds(x, y+h).includes("down"))) {
+            player.y += player.yChange;
+            player.frameY = 2;
         }
     }
 
@@ -772,6 +841,13 @@ function handleAttacking() {
             }
         }
     }
+
+    for (let e of enemies) {
+        if (e.isHit) {
+            context.drawImage(damageImage, e.damageFrame*24, 0, 24, 16,
+                e.x+e.width/3, e.y-16, 24, 16)
+        }
+    }
 }
 
 function handleProjectiles() {
@@ -845,7 +921,7 @@ function handleProjectiles() {
             player.frameY = 3;
         }
         for (let e of enemies) {
-            if (collides(projectileHitbox, e.enemyHitbox)) {
+            if (collides(projectileHitbox, e.enemyHitbox) && !e.isDying) {
                 e.health -= player.bowDamage;
                 e.damageFrame = player.bowDamage -1;
                 playerProjectiles.splice(playerProjectiles.indexOf(p), 1)
@@ -897,7 +973,6 @@ let maxEnemiesAtOnce = 10;
 let enemies = [];
 
 // the order to spawn enemies
-let enemySpawnQueue = ["skeleton 50"]
 let enemyInfo = {
     "skeleton" : {
         "amount": 0,
@@ -1397,8 +1472,8 @@ function playerStats() {
     if (iFrames > 0) iFrames -= 1;
 
     if (player.health === 0) {
-        context.drawImage(deathScreen, 0, 0, 368, 64,
-            canvas.width/2-184, canvas.height/2-32, 368, 64)
+        resultElement.innerHTML = "YOU DIED"
+        resultElement.className = "red"
         stop();
         return;
     }
@@ -1475,6 +1550,8 @@ let xhttp;
 function stop() {
     window.removeEventListener("keydown", activate, false);
     window.cancelAnimationFrame(request_id);
+
+    endElement.className = "";
 
     let data = new FormData();
     data.append("score", player.score);
@@ -1755,17 +1832,17 @@ function handlePowerups() {
         if (!powerupStarted) {
             for (let pu of powerups) {
                 if (pu.frameX === 0 && pu.frameY === 0) { // sapphire
-                    powerupTimer = 10;
+                    powerupTimer = 8;
                     powerupSpeed = true;
                 }
                 else if (pu.frameX === 0 && pu.frameY === 1) { // ruby
                     if (toolbar.frameY < maxPotionUses) toolbar.frameY ++;
-                    else powerupHealthMessage = `MAX POTIONS REACHED`;
+                    else powerupHealthMessage = `MAX POTIONS LIMIT`;
                     powerupTimer = 3;
                     powerupHealth = true;
                 }
                 else if (pu.frameX === 1 && pu.frameY === 0) { // emerald
-                    powerupTimer = 10;
+                    powerupTimer = 8;
                     powerupDamage = true;
                     player.damage ++;
                     player.bowDamage ++;

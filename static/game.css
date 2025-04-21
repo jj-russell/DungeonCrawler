@@ -10,7 +10,7 @@ body {
     margin: 0;
 }
 
-main { 
+main {
     width: 100vw;
     height: 100vh;
     display: flex;
@@ -18,28 +18,32 @@ main {
     align-items: center;
     gap: 0;
     margin-top: 0;
+    text-shadow: 2px 2px black;
 }
 
 header, footer {
     display: none;
 }
 
-.cheats_off {
+.red {
     color: #AE0000;
 }
 
-.cheats_on {
+.green {
     color: #00BB00;
 }
 
 #stats {
     max-width: 1000px;
     width: 100%;
-    position: relative;
     display: flex;
     justify-content: space-evenly;
     padding: 10px;
     border-radius: 10px;
+}
+
+#stats > * {
+    margin: 0;
 }
 
 #score {
@@ -48,14 +52,57 @@ header, footer {
 
 #timer {
     color: black;
+    text-shadow: 1px 1px var(--bg-three);
 }
 
 #powerup {
     color: rgb(112, 164, 241);
+}
+
+#info {
+    /* background-color: red; */
+    max-width: 1000px;
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
     position: relative;
     bottom: 120px;
 }
 
-#stats > * {
-    margin: 0;
+#result {
+    font-size: 96px;
+    position: absolute;
+    top: 25%;
+    left: 38%;
+}
+
+#controls {
+    max-width: 300px;
+    width: 100%;
+    position: absolute;
+    top: 24px;
+    left: 10px;
+}
+
+#controls > * {
+    margin: 10px 0;
+    font-size: 30px;
+}
+
+.odd {
+    color: var(--bg-main);
+}
+
+.even {
+    color: var(--bg-two);
+}
+
+#end {
+    position: fixed;
+    top: 200px;
+    right: 50px;
+}
+
+.hide {
+    display: none;
 }

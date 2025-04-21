@@ -4,6 +4,23 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='game.css') }}" />
     {% endblock %}
 {% block main_content %}
+        <section id="controls">
+            <h1>how to play</h1>
+            <p class="odd">wasd or arrow keys to move</p>
+            <p class="even">q / e to cycle through inventory</p>
+            <p class="odd">left click to attack / use potion</p>
+            <p class="even">kill enemies and finish quickly to gain score</p>
+            <p class="odd">defeat the final boss to win!</p>
+            <p class="even">Press P to enable cheats</p>
+            <p class="odd">if you use cheats it will show on the leaderboard</p>
+        </section>
+
+        <section id="end" class="hide">
+            <p><a href="">Play Again</a></p>
+            <p><a href="{{url_for('leaderboard')}}">Leaderboard</a></p>
+            <p><a href="{{url_for('index')}}">Main Menu</a></p>
+        </section>
+
         <canvas width="960" height="640px"></canvas>
             <section id="stats">
                 <p id="cheats"></p>
@@ -12,7 +29,12 @@
                 <p id="highscore"></p>
             </section>
             
-            <p id="powerup"></p>
+            <section id="info">
+                <p id="level"></p>
+                <p id="powerup"></p>
+            </section>
+
+            <p id="result"></p>
 
         <script>
             let highscore_value = '{{ highscore|tojson|safe }}'

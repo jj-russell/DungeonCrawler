@@ -1,24 +1,23 @@
+let door1_0;
+let door1_1;
+let door1_2;
+let door1_3;
+
+let door2_0;
+let door2_1;
+let door2_2;
+let door2_3;
+
 const levels = [
     {
       id: 1,
-      enemies: {
-        type: "zombie",
-        count: 5,
-        health: 100,
-        damage: 10,
-        speed: 2
-      }
+      enemySpawnQueue: [],
+      
     },
     {
       id: 2,
-      enemies: {
-        type: "skeleton",
-        count: 8,
-        health: 80,
-        damage: 15,
-        speed: 3
-      }
-    }
+      enemySpawnQueue: ["archer 5"]
+    },
   ];
   
   export default levels;

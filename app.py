@@ -82,10 +82,6 @@ def logout():
     session.modified = True
     return redirect(url_for("index"))
 
-@app.route("/tutorial")
-def tutorial():
-    return render_template("tutorial.html", title="Tutorial")
-
 @app.route("/game", methods=["GET", "POST"])
 @login_required
 def game():
