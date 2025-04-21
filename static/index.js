@@ -197,6 +197,7 @@ let timerDisplay;
 let timerElement;
 
 let powerupElement;
+let powerupMessage = `POWERUP: NONE`;
 let scoreElement;
 let highscoreElement;
 let cheatsElement;
@@ -394,7 +395,7 @@ function displayHUD() {
 
     highscoreElement.innerHTML = `HIGHSCORE: ${highscore_value}`;
     
-    powerupElement.innerHTML = `POWERUP: ${powerupTimer}`
+    powerupElement.innerHTML = powerupMessage;
 
     context.drawImage(toolbarImage, 0, toolbar.frameY*32, 96, 32,
         0, canvas.height-32, 96, 32)
@@ -892,11 +893,11 @@ function attack(event) {
 }
 
 let enemiesPerLevel = 50;
-let maxEnemiesAtOnce = 50;
+let maxEnemiesAtOnce = 10;
 let enemies = [];
 
 // the order to spawn enemies
-let enemySpawnQueue = ["archer 5"];
+let enemySpawnQueue = ["skeleton 50"]
 let enemyInfo = {
     "skeleton" : {
         "amount": 0,
@@ -1629,24 +1630,125 @@ function createObstacles() {
 }
 
 let powerups = [];
-let powerupInterval = randint(5, 15);
+let powerupSpawnTimer = randint(15, 25);
+let powerupSpawnFrameCounter = 30;
 let powerupTimer = 0;
 let powerupTimeFrameCounter = 30;
+let powerupCanSpawn = false;
 
 let powerupStarted = false;
 let powerupSpeed = false;
 let powerupHealth = false;
+let powerupHealthMessage = `HEALTH POTION GAINED`;
 let powerupDamage = false;
 let powerupInvincibility = false;
 
 let normalPlayerDamage = player.damage;
 let normalPlayerBowDamage = player.bowDamage;
 
+function createPowerups() {
+    if (!powerupCanSpawn && !player.hasPowerup) {
+        if (powerupSpawnTimer === 0) {
+            powerupSpawnTimer = randint(15, 25);
+            powerupSpawnFrameCounter = 30;
+            powerupCanSpawn = true;
+        }
+        else {
+            if (powerupSpawnFrameCounter === 0) {
+                powerupSpawnFrameCounter = 30;
+                powerupSpawnTimer --;
+            }
+            else {
+                powerupSpawnFrameCounter --;
+            }
+        }
+    }
+        if (powerups.length < 1) {
+            let isValid = true;
+            let frameX;
+            let frameY;
+    
+            let powerupOdds = randint(1, 10)
+            
+            if (powerupOdds <= 4) frameX = frameY = 0; 
+            else if (powerupOdds <= 7) {
+                frameX = 0;
+                frameY = 1;
+            }
+            else if (powerupOdds <= 9) {
+                frameX = 1;
+                frameY = 0;
+            }
+            else frameX = frameY = 1;
+
+            let powerupX = randint(boundaryLocation()["left"], boundaryLocation()["right"]-2*squareSize);
+            let powerupY = randint(boundaryLocation()["up"]+squareSize, boundaryLocation()["down"]-squareSize);
+
+            if (!(powerupX % squareSize === 0)) {
+                powerupX = (Math.round(powerupX / squareSize) * squareSize) + 1;
+            } 
+            else {
+                powerupX++;
+            }
+            if (!(powerupY % squareSize === 0)) {
+                powerupY = (Math.round(powerupY / squareSize) * squareSize) + 1;
+            } 
+            else {
+                powerupY++;
+            }
+
+            let powerup = {
+                x: powerupX,
+                y: powerupY,
+                width: 32,
+                height: 32,
+                frameX: frameX,
+                frameY: frameY,
+            }
+        
+            for (let o of obstacles) {
+                if (collides(powerup, o)) {
+                    isValid = false;
+                    break;
+                }
+            }
+
+            if (isValid) {
+                powerups.push(powerup);
+            }
+        }    
+    
+    if (powerupCanSpawn) {
+        for (let pu of powerups) {
+            context.drawImage(powerupImage, pu.frameX*32, pu.frameY*32, pu.width, pu.height,
+                pu.x, pu.y, pu.width, pu.height
+            )
+
+            if (collides(player, pu)) {
+                player.hasPowerup = true;
+                player.score ++;
+            }
+        }
+    }
+}
+
 function handlePowerups() {
-    console.log(powerupInterval)
-    if (!powerupDamage) {
+    if (powerupDamage) {
+        powerupElement.innerHTML = `ATTACK INCREASE: ${powerupTimer}`;
+    }
+    else {
         player.damage = normalPlayerDamage;
         player.bowDamage = normalPlayerBowDamage;
+    }
+    if (powerupSpeed) {
+        player.xChange = player.yChange = 16;
+        powerupElement.innerHTML = `SUPER SPEED: ${powerupTimer}`;
+    }
+    if (powerupInvincibility) {
+        powerupElement.innerHTML = `INVINCIBILITY: ${powerupTimer}`;
+    }
+    if (powerupHealth) {
+        powerupElement.innerHTML = powerupHealthMessage;
     }
 
     if (player.hasPowerup) {
@@ -1655,13 +1757,12 @@ function handlePowerups() {
                 if (pu.frameX === 0 && pu.frameY === 0) { // sapphire
                     powerupTimer = 10;
                     powerupSpeed = true;
-                    player.xChange = player.yChange = 16;
                 }
                 else if (pu.frameX === 0 && pu.frameY === 1) { // ruby
-                    if (toolbar.frameY < maxPotionUses) {
-                        toolbar.frameY ++;
-                    }
-                    powerupTimer = 1;
+                    if (toolbar.frameY < maxPotionUses) toolbar.frameY ++;
+                    else powerupHealthMessage = `MAX POTIONS REACHED`;
+                    powerupTimer = 3;
+                    powerupHealth = true;
                 }
                 else if (pu.frameX === 1 && pu.frameY === 0) { // emerald
                     powerupTimer = 10;
@@ -1673,82 +1774,26 @@ function handlePowerups() {
                     powerupTimer = 5;
                     powerupInvincibility = true;
                 }
+                powerups.pop(pu);
                 powerupStarted = true;
             }
         }
 
         if (powerupTimer > 0) {
             if (powerupTimeFrameCounter === 0) {
-                powerupTimer --;
                 powerupTimeFrameCounter = 30;
+                powerupTimer --;
                 if (powerupTimer === 0) {
                     player.hasPowerup = false;
                     powerupStarted = false;
                     powerupSpeed = powerupHealth = powerupDamage = powerupInvincibility = false;
+                    powerupMessage = `POWERUP: NONE`;
                 }
             }
             else {
                 powerupTimeFrameCounter --;
             }
         }
-    }
-}
-
-function createPowerups() {
-    while (powerups.length < 1 && (time % powerupInterval === 0) && (time != 0)) {
-        let isValid = true;
-        // let frameX = randint(0, 1);
-        // let frameY = randint(0, 1);
-        let frameX = 0;
-        let frameY = 1;
-
-        let powerupX = randint(boundaryLocation()["left"], boundaryLocation()["right"]-2*squareSize);
-        let powerupY = randint(boundaryLocation()["up"]+squareSize, boundaryLocation()["down"]-squareSize);
-
-        if (!(powerupX % squareSize === 0)) {
-            powerupX = (Math.round(powerupX / squareSize) * squareSize) + 1;
-        } 
-        else {
-            powerupX++;
-        }
-        if (!(powerupY % squareSize === 0)) {
-            powerupY = (Math.round(powerupY / squareSize) * squareSize) + 1;
-        } 
-        else {
-            powerupY++;
-        }
-
-        let powerup = {
-            x: powerupX,
-            y: powerupY,
-            width: 32,
-            height: 32,
-            frameX: frameX,
-            frameY: frameY,
-        }
-    
-        for (let o of obstacles) {
-            if (collides(powerup, o)) {
-                isValid = false;
-                break;
-            }
-        }
-
-        if (isValid) {
-            powerups.push(powerup);
-        }
-    }
-
-    context.fillStyle = "red";
-    for (let pu of powerups) {
-        context.drawImage(powerupImage, pu.frameX*32, pu.frameY*32, pu.width, pu.height,
-            pu.x, pu.y, pu.width, pu.height
-        )
-
-        if (collides(player, pu)) {
-            powerups.pop(pu);
-            player.hasPowerup = true;
-            player.score ++;
-        }
+        powerupCanSpawn = false;
     }
 }

@@ -29,51 +29,6 @@ def login_required(view):
 def index():
     return render_template("index.html", title="Main Menu")
 
-@app.route("/game", methods=["GET", "POST"])
-@login_required
-def game():
-    db = get_db()
-    highscore = db.execute("""SELECT score FROM users
-                              WHERE user = ?;""", (g.user,)).fetchone()
-    highscore = highscore["score"]
-
-    return render_template("game.html", title="Game", highscore=highscore)
-
-@app.route("/store_score", methods=["GET", "POST"])
-@login_required
-def store_score():
-    score = int(request.form["score"])
-    time = int(request.form["time"])
-    
-    db = get_db()
-    current_score = db.execute("""SELECT score
-                                  FROM users
-                                  WHERE user = ?""", (g.user,)).fetchone()
-
-    current_time = db.execute("""SELECT time
-                                  FROM users
-                                  WHERE user = ?""", (g.user,)).fetchone()
-
-    current_score = int(current_score["score"])
-    current_time = int(current_time["time"])
-
-
-    if score > current_score or (score == current_score and time < current_time):
-        db.execute("""UPDATE users
-                    SET score = ?, time = ?
-                    WHERE user = ?""", (score, time, g.user))
-        db.commit()
-        return "success"
-    return "nope"
-
-@app.route("/leaderboard")
-def leaderboard():
-    db = get_db()
-    leaderboard = db.execute("""SELECT * FROM users  
-                                ORDER BY score DESC, time ASC;""").fetchall()
-
-    return render_template("leaderboard.html", leaderboard=leaderboard, title="Leaderboard")
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     form = RegistrationForm()
@@ -126,6 +81,55 @@ def logout():
     session.clear()
     session.modified = True
     return redirect(url_for("index"))
+
+@app.route("/tutorial")
+def tutorial():
+    return render_template("tutorial.html", title="Tutorial")
+
+@app.route("/game", methods=["GET", "POST"])
+@login_required
+def game():
+    db = get_db()
+    highscore = db.execute("""SELECT score FROM users
+                              WHERE user = ?;""", (g.user,)).fetchone()
+    highscore = highscore["score"]
+
+    return render_template("game.html", title="Game", highscore=highscore)
+
+@app.route("/store_score", methods=["GET", "POST"])
+@login_required
+def store_score():
+    score = int(request.form["score"])
+    time = int(request.form["time"])
+    
+    db = get_db()
+    current_score = db.execute("""SELECT score
+                                  FROM users
+                                  WHERE user = ?""", (g.user,)).fetchone()
+
+    current_time = db.execute("""SELECT time
+                                  FROM users
+                                  WHERE user = ?""", (g.user,)).fetchone()
+
+    current_score = int(current_score["score"])
+    current_time = int(current_time["time"])
+
+
+    if score > current_score or (score == current_score and time < current_time):
+        db.execute("""UPDATE users
+                    SET score = ?, time = ?
+                    WHERE user = ?""", (score, time, g.user))
+        db.commit()
+        return "success"
+    return "nope"
+
+@app.route("/leaderboard")
+def leaderboard():
+    db = get_db()
+    leaderboard = db.execute("""SELECT * FROM users  
+                                ORDER BY score DESC, time ASC;""").fetchall()
+
+    return render_template("leaderboard.html", leaderboard=leaderboard, title="Leaderboard")
 
 @app.route("/attribution")
 def attribution():
