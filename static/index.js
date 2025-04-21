@@ -759,7 +759,7 @@ function handleAttacking() {
     
         else if (inventory[current_item] === "bow") {
             if (player.bowFrameCounter === 0) {
-                player.bowFrame = (player.bowFrame +1) % 13;
+                player.bowFrame = (player.bowFrame +1) % 10;
                 player.bowFrameCounter = 2;
             }
             player.bowFrameCounter --;
@@ -778,10 +778,6 @@ function handleAttacking() {
                     frameY: 0,
                 }
                 playerProjectiles.push(playerProjectile)
-                let direction = calculateDirection(player.x+player.width/2, player.y+player.height/2, clickX, clickY);
-                playerProjectile.dx = direction.dx
-                playerProjectile.dy = direction.dy
-                playerProjectile.hasFired = true;
                 player.isAttacking = false;
                 player.bowFrameCounter = 0;
             }
@@ -857,6 +853,17 @@ function handleProjectiles() {
             y: p.y,
             width: p.width,
             height: p.height
+        }
+
+        if (! p.hasFired) {
+            projectileHitbox.x += 32
+            projectileHitbox.y += 32
+            
+            let direction = calculateDirection(projectileHitbox.x, projectileHitbox.y, clickX, clickY);
+            
+            p.dx = direction.dx
+            p.dy = direction.dy
+            p.hasFired = true;
         }
         
         // regular projectile path
@@ -935,13 +942,13 @@ function handleProjectiles() {
                 break;
             }
         }
-
+    
         if (p.hasFired) {    
             let x = projectileHitbox.x;
             let y = projectileHitbox.y;
             let w = projectileHitbox.width;
             let h = projectileHitbox.height;
-
+            
             // projectile reaches the edge
             if ((outOfBounds(x, y).includes("left")) || ((outOfBounds(x,y+h).includes("down"))) || 
                 (outOfBounds(x, y).includes("up")) || ((outOfBounds(x+w,y).includes("right")))) {
@@ -964,8 +971,10 @@ function attack(event) {
     if (!player.isAttacking) {
         player.isAttacking = true;
     }
-    clickX = event.clientX;
-    clickY = event.clientY;
+    
+    let rect = canvas.getBoundingClientRect();
+    clickX = event.clientX - rect.left;
+    clickY = event.clientY - rect.top;
 }
 
 let enemiesPerLevel = 50;
