@@ -5,10 +5,10 @@ let currentLevelIndex = currentLevel - 1;
 let canvas;
 let context;
 let fpsInterval = 1000 / 30; // the denominator is frames-per-second
-let now;
 let then = Date.now();
 let request_id;
 let isPaused = false;
+let xhttp;
 
 let hasCheated = false;
 
@@ -35,6 +35,10 @@ let doorsOpened = false;
 
 function openDoor(arr) {
     return arr.map(value => value + 2);
+}
+
+function closeDoor(arr) {
+    return arr.map(value => value - 2);
 }
 
 let tilesPerRow = 8;
@@ -215,8 +219,68 @@ let enemyHealthBar = {
 }
 
 let enemySpawnQueue = levels[currentLevelIndex]["enemySpawnQueue"];
+let enemiesPerLevel = 50;
+let maxEnemiesAtOnce = 10;
+let enemies = [];
 
+let enemyInfo = {
+    "skeleton": {
+        "maxHealth": 3,
+        "speed": 4,
+        "canKnockback": true,
+        "attackType": "melee"
+    },
+    "armoured_skeleton": {
+        "maxHealth": 6,
+        "speed": 5,
+        "canKnockback": true,
+        "attackType": "melee"
+    },
+    "paladin": {
+        "maxHealth": 10,
+        "speed": 6,
+        "canKnockback": true,
+        "attackType": "melee"
+    },
+    "archer": {
+        "maxHealth": 3,
+        "speed": 4,
+        "attackDistance": 4,
+        "canKnockback": true,
+        "attackType": "range",
+        "maxProjectiles": 1,
+        "projectile": arrowImage,
+        "attackAnimationFrames": 13,
+        "projectileAnimationFrames": 2,
+        "delay": 60,
+    },
+    "mage": {
+        "maxHealth": 5,
+        "speed": 6,
+        "attackDistance": 6,
+        "canKnockback": true,
+        "attackType": "range",
+        "maxProjectiles": 2,
+        "projectile": fireball,
+        "attackAnimationFrames": 7,
+        "projectileAnimationFrames": 8,
+        "delay": 30
+    },
+    "boss": {
+        "maxHealth": 50,
+        "speed": 6,
+        "attackDistance": 8,
+        "canKnockback": false,
+        "attackType": "range",
+        "maxProjectiles": 3,
+        "projectile": icicle,
+        "attackAnimationFrames": 7,
+        "projectileAnimationFrames": 8,
+        "delay": 15
+    },
+}
 let enemyId = 0;
+let enemyProjectileSpawnDelay = 30;
 
 let time = 0;
 let timeFrameCounter = 30;
@@ -289,7 +353,7 @@ function init() {
     }
 
     player.x = canvas.width/2-32;
-    player.y = 96;
+    player.y = 64;
 
     load_assets([
         {"var": playerWalk, "url": "static/images/player_animations/PLAYER_WALK.png"},
@@ -359,12 +423,6 @@ function draw() {
         context.drawImage(playerWalk, player.frameX*player.width, player.frameY*player.height, player.width, player.height,
                         player.x, player.y, player.width, player.height);
     }
-    
-    for (let e of enemies) { // enemies dont move until player moves certain distance (out of "spawn" area)
-        if (!collides(player, spawn)) {
-            e.canSpawn = true;
-        }
-    }
 
     handleAttacking();
 
@@ -387,7 +445,6 @@ function draw() {
     createPowerups();
 
     handlePowerups();
-    console.log(staminaBar.frameX)
 }
 
 function displayMap() {
@@ -456,6 +513,14 @@ function endOfLevel() {
         door2 = openDoor(door2);
     }
     if (collides(player, exit)) {
+        
+        door2 = closeDoor(door2);
+        doorsOpened = false;
+
+        if (currentLevel === 1) {
+            door1 = openDoor(door1);
+        }
+        
         updateLevel();
         player.x = canvas.width/2 -32;
         player.y = 64;
@@ -478,8 +543,10 @@ function updateLevel() {
     staminaBar.frameY = maxPlayerStam
     
     currentLevel ++;
+    currentLevelIndex ++;
     player.score += 100;
     enemySpawnQueue = levels[currentLevelIndex]["enemySpawnQueue"];
+    console.log(currentLevel, levels[currentLevelIndex])
 }
 
 function boundaryLocation() {
@@ -621,6 +688,7 @@ function togglePause() {
      
     if (!isPaused) {
         startPauseElement.className = "";
+        endElement.className = "hide";
         pauseElement.className = "hide";
         controlsElement.className = "hide";
         draw();
@@ -629,6 +697,7 @@ function togglePause() {
         startPauseElement.className = "hide";
         pauseElement.className = "";
         controlsElement.className = "";
+        endElement.className = "";
     }
 }
 
@@ -1081,68 +1150,6 @@ function attack(event) {
     clickY = event.clientY - rect.top;
 }
 
-let enemiesPerLevel = 50;
-let maxEnemiesAtOnce = 10;
-let enemies = [];
-
-// the order to spawn enemies
-let enemyInfo = {
-    "skeleton": {
-        "maxHealth": 3,
-        "speed": 4,
-        "canKnockback": true,
-        "attackType": "melee"
-    },
-    "armoured_skeleton": {
-        "maxHealth": 6,
-        "speed": 6,
-        "canKnockback": true,
-        "attackType": "melee"
-    },
-    "paladin": {
-        "maxHealth": 10,
-        "speed": 8,
-        "canKnockback": true,
-        "attackType": "melee"
-    },
-    "archer": {
-        "maxHealth": 3,
-        "speed": 4,
-        "attackDistance": 4,
-        "canKnockback": true,
-        "attackType": "range",
-        "maxProjectiles": 1,
-        "projectile": arrowImage,
-        "attackAnimationFrames": 13,
-        "projectileAnimationFrames": 2,
-        "delay": 60,
-    },
-    "mage": {
-        "maxHealth": 5,
-        "speed": 6,
-        "attackDistance": 6,
-        "canKnockback": true,
-        "attackType": "range",
-        "maxProjectiles": 2,
-        "projectile": fireball,
-        "attackAnimationFrames": 7,
-        "projectileAnimationFrames": 8,
-        "delay": 30
-    },
-    "boss": {
-        "maxHealth": 50,
-        "speed": 6,
-        "attackDistance": 8,
-        "canKnockback": false,
-        "attackType": "range",
-        "maxProjectiles": 3,
-        "projectile": icicle,
-        "attackAnimationFrames": 7,
-        "projectileAnimationFrames": 8,
-        "delay": 15
-    },
-}
-
 let breakCheck;
 function createEnemies() {
     breakCheck = false;
@@ -1246,7 +1253,11 @@ function createEnemies() {
 
 function drawEnemies() {
     for (let e of enemies) {
-        // spawn animation - the reverse of dying animation
+        // enemies dont move until player moves certain distance (out of "spawn" area)
+        if (!collides(player, spawn)) {
+            e.canSpawn = true;
+        }
+        
         if (e.isSpawning) {
             e.moveUp = e.moveLeft = e.moveDown = e.moveRight = false;
             if (e.canSpawn) {
@@ -1280,18 +1291,22 @@ function drawEnemies() {
 
         context.drawImage(enemyHealthBarImage, 0, enemyHealthBar.frame*enemyHealthBar.height, enemyHealthBar.width, enemyHealthBar.height,
             e.x, e.y, enemyHealthBar.width, enemyHealthBar.height);
+
     }
 }
 
 function moveEnemies() {
     for (let e of enemies) {
+        // dont move if attacking, dying, spawning
+        if (e.isAttacking || e.isDying || e.isSpawning) {
+            continue;
+        }
         e.enemyHitbox = {
             x: e.x+16, 
             y: e.y+12, 
             width: e.width/2, 
             height: e.height-12
         }
-        
         if (e.isHit) {
             if (e.hitFrameCounter === 15) {
                 e.isHit = false;
@@ -1302,17 +1317,12 @@ function moveEnemies() {
             }
         }
 
-        // dont move if attacking, dying, spawning
-        if (e.isAttacking || e.isDying || e.isSpawning) {
-            continue;
-        }
-
         // if enemy is next to the player stop and attack
         let distanceY = Math.abs(player.y - e.y);
         let distanceX = Math.abs(player.x - e.x)
         
         if (enemyInfo[e.type]["attackType"] === "melee") {
-            if (distanceX <= player.width && distanceY <= player.height/4) {
+            if ((distanceX <= player.width && distanceY <= player.height/4)) {
                 e.isAttacking = true;
                 e.frameX = 0;
                 // face the player
@@ -1339,29 +1349,38 @@ function moveEnemies() {
                 
                 continue;
             }
-        } 
+        }
+        // direct path to player
+        let dirX = player.x - e.x;
+        let dirY = player.y - e.y;
+        let distToPlayer = Math.sqrt(dirX * dirX + dirY * dirY);
+        
+        if (distToPlayer > 0) {
+            dirX /= distToPlayer;
+            dirY /= distToPlayer;
+        }
+        
+        e.x = e.x + dirX * e.xChange;
+        e.y = e.y + dirY * e.yChange;
+
         if (! e.isHit || !enemyInfo[e.type]["canKnockback"]) {
             // movement
             if (player.x - e.width > e.x) { // right
-                e.x += e.xChange;
                 e.frameY = 3;
                 e.moveRight = true;
                 e.moveUp = e.moveLeft = e.moveDown = false;
             }
             else if (player.x + e.width < e.x) { // left
-                e.x -= e.xChange;
                 e.frameY = 1;
                 e.moveLeft = true;
                 e.moveUp = e.moveDown = e.moveRight = false;
             }
             else if (player.y < e.y) { // up
-                e.y -= e.yChange;
                 e.frameY = 0;
                 e.moveUp = true;
                 e.moveLeft = e.moveDown = e.moveRight = false;
             }
             else if (player.y > e.y) { // down
-                e.y += e.yChange;
                 e.frameY = 2;
                 e.moveDown = true;
                 e.moveUp = e.moveLeft = e.moveRight = false;
@@ -1377,7 +1396,8 @@ function moveEnemies() {
         }
     }
 }
-let j = 30;
+
+
 function handleEnemyAttacking() {
     for (let e of enemies) {
         if (e.isAttacking) {
@@ -1432,7 +1452,7 @@ function handleEnemyAttacking() {
                     }
                 }
                 if ((enemyProjectiles.length < totalProjectiles) 
-                    && (e.projectileCounter < enemyInfo[e.type]["maxProjectiles"]) && j === 0) {
+                    && (e.projectileCounter < enemyInfo[e.type]["maxProjectiles"]) && enemyProjectileSpawnDelay === 0) {
                     let p = {
                         id: e.id,
                         hasFired: false,
@@ -1447,10 +1467,10 @@ function handleEnemyAttacking() {
                     }
                     enemyProjectiles.push(p);
                     e.projectileCounter ++;
-                    j = 30;
+                    enemyProjectileSpawnDelay = 30;
                 }
-                else if (j > 0 ){
-                    j--;
+                else if (enemyProjectileSpawnDelay > 0 ){
+                    enemyProjectileSpawnDelay--;
                 }
             }
         }
@@ -1704,7 +1724,6 @@ function collides(obj1, obj2) {
     return true;
 }
 
-let xhttp;
 function stop() {
     window.removeEventListener("keydown", activate, false);
     window.removeEventListener("keydown", handleKeyPress, false);

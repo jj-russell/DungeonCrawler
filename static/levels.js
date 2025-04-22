@@ -6,19 +6,19 @@ const levels = [
     },
     {
       id: 2,
-      enemySpawnQueue: []
+      enemySpawnQueue: ["skeleton 1"]
     },
     {
       id: 3,
-      enemySpawnQueue: []
+      enemySpawnQueue: ["skeleton 1"]
     },
     {
       id: 4,
-      enemySpawnQueue: []
+      enemySpawnQueue: ["skeleton 1"]
     },
     {
       id: 5,
-      enemySpawnQueue: ["boss 1"]
+      enemySpawnQueue: ["skeleton 1"]
     },
   ];
   
