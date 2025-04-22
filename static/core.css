@@ -76,3 +76,11 @@ footer {
     color: var(--bg-main);
     font-size: 28px;
 }
+
+.red {
+    color: #AE0000;
+}
+
+.green {
+    color: #00BB00;
+}

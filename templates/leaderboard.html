@@ -13,6 +13,7 @@
                                     <th>User</th>
                                     <th>Score</th>
                                     <th>Time</th>
+                                    <th>Cheats</th>
                                 </tr>
                             </thead>
                         {% for user in leaderboard %}
@@ -28,6 +29,12 @@
                                     <td>{{ user["score"] }}</td>
                                     <td>
                                         {{ user["time"]//60 }}:{{ '%02d' % (user["time"] % 60) }}
+                                    </td>
+                                    <td>{% if user["cheats"] == 0 %} 
+                                        <p class="green">No</p>
+                                        {% else %}
+                                        <p class="red">Yes</p>
+                                        {% endif %}
                                     </td>
                                 </tr>
                         {% endfor %}

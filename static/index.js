@@ -8,6 +8,7 @@ let fpsInterval = 1000 / 30; // the denominator is frames-per-second
 let now;
 let then = Date.now();
 let request_id;
+let isPaused = false;
 
 let hasCheated = false;
 
@@ -41,12 +42,13 @@ let tileSize = 32;
 let backgroundImage = new Image();
 
 let maxPlayerHealth = 5;
+let maxPlayerStam = 5;
 let player = {
     score: 0,
     health: maxPlayerHealth,
     damage: 2,
     bowDamage: 1,
-    stamina: 50,
+    stamina: maxPlayerStam*10,
     x: 64,
     y: 64,
     width: 64,
@@ -86,7 +88,8 @@ let playerHealthBar = {
     y: player.y,
     width: 64,
     height: 16,
-    frame: 0,
+    frameX: 0,
+    frameY: 5,
 }
 
 let staminaBar = {
@@ -94,8 +97,9 @@ let staminaBar = {
     y: player.y + 16,
     width: 64,
     height: 16,
-    frame: 0,
-    max: player.stamina,
+    frameX: 0,
+    frameY: maxPlayerStam,
+    max: maxPlayerStam*10,
     frameCounter: 0,
 }
 
@@ -231,6 +235,9 @@ let endElement;
 let currentMinute;
 let currentSecond;
 
+let controlsElement;
+let startPauseElement;
+let pauseElement;
 let resultElement;
 let levelComplete;
 
@@ -252,11 +259,15 @@ function init() {
     highscoreElement = document.querySelector("#highscore");
     resultElement = document.querySelector("#result");
     endElement = document.querySelector("#end");
+    startPauseElement = document.querySelector("#startPause")
+    pauseElement = document.querySelector("#pause")
+    controlsElement = document.querySelector("#controls")
 
     window.addEventListener("keydown", activate, false);
     window.addEventListener("keyup", deactivate, false);
     window.addEventListener("keydown", handleInventory, false);
     window.addEventListener("keydown", enableCheats, false);
+    window.addEventListener("keydown", handleKeyPress, false);
 
     // disable right click
     window.addEventListener("contextmenu", function(event) {
@@ -323,7 +334,9 @@ function init() {
 }
 
 function draw() {
-    request_id = window.requestAnimationFrame(draw);
+    if (!isPaused) {
+        request_id = window.requestAnimationFrame(draw);
+    }
     let now = Date.now();
     let elapsed = now - then;
     if (elapsed <= fpsInterval) {
@@ -374,6 +387,7 @@ function draw() {
     createPowerups();
 
     handlePowerups();
+    console.log(staminaBar.frameX)
 }
 
 function displayMap() {
@@ -410,7 +424,6 @@ function displayMap() {
     door2_3 = door2[3];
 
     // background
-    context.fillStyle = "black";
     context.clearRect(0, 0, canvas.width, canvas.height);
     for (let r = 0; r < 20; r++) {
         for (let c = 0; c < 30; c++) {
@@ -453,6 +466,17 @@ function endOfLevel() {
 function updateLevel() {
     maxPotionUses++;
     toolbar.frameY = maxPotionUses;
+
+    maxPlayerHealth ++;
+    playerHealthBar.frameX ++;
+    player.health = playerHealthBar.frameY = maxPlayerHealth;
+
+    
+    maxPlayerStam ++;
+    staminaBar.frameX ++;
+    player.stamina = maxPlayerStam*10;
+    staminaBar.frameY = maxPlayerStam
+    
     currentLevel ++;
     player.score += 100;
     enemySpawnQueue = levels[currentLevelIndex]["enemySpawnQueue"];
@@ -555,6 +579,13 @@ function enableCheats(event) {
     }
 }
 
+function handleKeyPress(event) {
+    let key = event.key
+    if (key === 'b' || key === 'B') {
+        togglePause();
+    }
+}
+
 function handleInventory(event) {
     if (! player.isAttacking) {
         let key = event.key;
@@ -582,6 +613,22 @@ function handleInventory(event) {
             toolbar.frameX = current_item;
             showCurrentItemCounter = 0;
         }
+    }
+}
+
+function togglePause() {
+    isPaused = !isPaused;
+     
+    if (!isPaused) {
+        startPauseElement.className = "";
+        pauseElement.className = "hide";
+        controlsElement.className = "hide";
+        draw();
+    }
+    else {
+        startPauseElement.className = "hide";
+        pauseElement.className = "";
+        controlsElement.className = "";
     }
 }
 
@@ -633,14 +680,14 @@ function movePlayer() {
             player.xChange += 2;
             player.yChange += 2;
             player.stamina --;
-            if (player.stamina % staminaFrameInterval === 0 && staminaBar.frame < 5) {
-                staminaBar.frame ++
+            if (player.stamina % staminaFrameInterval === 0 && staminaBar.frameY > 0) {
+                staminaBar.frameY --;
             }
         }
         else if (player.stamina > 0) {
             player.stamina --;
-            if (player.stamina % staminaFrameInterval === 0 && staminaBar.frame < 5) {
-                staminaBar.frame ++
+            if (player.stamina % staminaFrameInterval === 0 && staminaBar.frameY > 0) {
+                staminaBar.frameY --;
             }
         }
         else {
@@ -659,8 +706,8 @@ function movePlayer() {
         if (player.stamina < staminaBar.max) {
             if (staminaBar.frameCounter === 5) {
                 player.stamina ++;
-                if (staminaBar.frame > 0 && player.stamina % staminaFrameInterval === 0) {
-                    staminaBar.frame --
+                if (staminaBar.frameY < maxPlayerStam && player.stamina % staminaFrameInterval === 0) {
+                    staminaBar.frameY ++;
                 }
                 staminaBar.frameCounter = 0;
             }
@@ -754,7 +801,7 @@ function handleAttacking() {
             }
             
             for (let e of enemies) {
-                if (collides(e, swordHitbox) && !e.isDying && e.canSpawn) {
+                if (collides(e, swordHitbox) && !e.isDying && e.canSpawn && !e.isSpawning) {
                     if (! e.isHit) {
                         if (player.swordFrame <= 3) {
                             e.health -= player.damage;
@@ -845,7 +892,7 @@ function handleAttacking() {
                 player.x, player.y, player.width, player.height);
             if (player.health < maxPlayerHealth && !player.isHealing && toolbar.frameY > 0) {
                 player.health ++;
-                playerHealthBar.frame --;
+                playerHealthBar.frameY ++;
                 player.isHealing = true;
                 toolbar.frameY --;
             }
@@ -985,7 +1032,7 @@ function handleProjectiles() {
             player.frameY = 3;
         }
         for (let e of enemies) {
-            if (collides(projectileHitbox, e.enemyHitbox) && !e.isDying && e.canSpawn) {
+            if (collides(projectileHitbox, e.enemyHitbox) && !e.isDying && e.canSpawn && !e.isSpawning) {
                 e.health -= player.bowDamage;
                 e.damageFrame = player.bowDamage -1;
                 playerProjectiles.splice(playerProjectiles.indexOf(p), 1)
@@ -1040,23 +1087,28 @@ let enemies = [];
 
 // the order to spawn enemies
 let enemyInfo = {
-    "skeleton" : {
+    "skeleton": {
         "maxHealth": 3,
+        "speed": 4,
         "canKnockback": true,
         "attackType": "melee"
     },
-    "armoured_skeleton" : {
+    "armoured_skeleton": {
         "maxHealth": 6,
+        "speed": 6,
         "canKnockback": true,
         "attackType": "melee"
     },
-    "paladin" : {
+    "paladin": {
         "maxHealth": 10,
+        "speed": 8,
         "canKnockback": true,
         "attackType": "melee"
     },
-    "archer" : {
+    "archer": {
         "maxHealth": 3,
+        "speed": 4,
+        "attackDistance": 4,
         "canKnockback": true,
         "attackType": "range",
         "maxProjectiles": 1,
@@ -1065,8 +1117,10 @@ let enemyInfo = {
         "projectileAnimationFrames": 2,
         "delay": 60,
     },
-    "mage" : {
+    "mage": {
         "maxHealth": 5,
+        "speed": 6,
+        "attackDistance": 6,
         "canKnockback": true,
         "attackType": "range",
         "maxProjectiles": 2,
@@ -1075,8 +1129,10 @@ let enemyInfo = {
         "projectileAnimationFrames": 8,
         "delay": 30
     },
-    "boss" : {
+    "boss": {
         "maxHealth": 50,
+        "speed": 6,
+        "attackDistance": 8,
         "canKnockback": false,
         "attackType": "range",
         "maxProjectiles": 3,
@@ -1119,8 +1175,8 @@ function createEnemies() {
                 y: 0, 
                 width: 64,
                 height: 64,
-                xChange: 4,
-                yChange: 4,
+                xChange: enemyInfo[type]["speed"],
+                yChange: enemyInfo[type]["speed"],
                 frameX: 0,
                 frameY: 0,
                 attackFrameX: 0,
@@ -1269,7 +1325,9 @@ function moveEnemies() {
             }
         }
         else if (enemyInfo[e.type]["attackType"] === "range") {
-            if ((distanceX <= player.width*4 && distanceY <= player.height*2)) {
+            let playerX = player.width*enemyInfo[e.type]["attackDistance"];
+            let playerY = player.height*enemyInfo[e.type]["attackDistance"]/2;
+            if ((distanceX <= playerX && distanceY <= playerY)) {
                 e.isAttacking = true;
                 e.moveUp = e.moveLeft = e.moveDown = e.moveRight = false;
                 e.frameX = 0;
@@ -1518,8 +1576,10 @@ function handleEnemyProjectiles() {
                 }
             }
             else {
-                p.x = e.x;
-                p.y = e.y;
+                if (p.id === e.id) {
+                    p.x = e.x;
+                    p.y = e.y;
+                }
             }
         }
     }
@@ -1541,17 +1601,17 @@ function takeDamage() {
         if (player.health > 0) {
             iFrames = iFrameMax;
             player.health--;
-            playerHealthBar.frame ++;
+            playerHealthBar.frameY --;
             player.isHit = true;
         }
     }
 }
 
 function playerStats() {
-    context.drawImage(playerHealthBarImage, 0, playerHealthBar.frame*playerHealthBar.height, playerHealthBar.width, playerHealthBar.height,
+    context.drawImage(playerHealthBarImage, playerHealthBar.frameX*playerHealthBar.width, playerHealthBar.frameY*playerHealthBar.height, playerHealthBar.width, playerHealthBar.height,
         player.x, player.y-14, playerHealthBar.width, playerHealthBar.height);
 
-    context.drawImage(playerStaminaBarImage, 0, staminaBar.frame*staminaBar.height, staminaBar.width, staminaBar.height,
+    context.drawImage(playerStaminaBarImage, staminaBar.frameX*staminaBar.width, staminaBar.frameY*staminaBar.height, staminaBar.width, staminaBar.height,
         player.x, player.y, staminaBar.width, staminaBar.height);
 
     if (player.isHit) {
@@ -1647,6 +1707,7 @@ function collides(obj1, obj2) {
 let xhttp;
 function stop() {
     window.removeEventListener("keydown", activate, false);
+    window.removeEventListener("keydown", handleKeyPress, false);
     window.cancelAnimationFrame(request_id);
 
     endElement.className = "";
@@ -1654,6 +1715,13 @@ function stop() {
     let data = new FormData();
     data.append("score", player.score);
     data.append("time", time);
+    if (hasCheated) {
+        hasCheated = 1;
+    }
+    else {
+        hasCheated = 0;
+    }
+    data.append("cheats", hasCheated);
 
     xhttp = new XMLHttpRequest();
     xhttp.addEventListener("readystatechange", handle_response, false);

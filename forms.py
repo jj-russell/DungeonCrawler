@@ -26,4 +26,4 @@ class RegistrationForm(LoginForm):
     
     password2  = PasswordField(render_kw={"placeholder":"Confirm password"})
     
-    submit = SubmitField("Sign Up")
+    submit = SubmitField("Register")

@@ -25,14 +25,6 @@ header, footer {
     display: none;
 }
 
-.red {
-    color: #AE0000;
-}
-
-.green {
-    color: #00BB00;
-}
-
 #stats {
     max-width: 1000px;
     width: 100%;
@@ -75,12 +67,18 @@ header, footer {
     left: 35%;
 }
 
-#controls {
+#controls, #startPause {
+    text-align: center;
     max-width: 300px;
     width: 100%;
     position: absolute;
     top: 24px;
     left: 10px;
+}
+
+#startPause {
+    max-width: 200px;
+    width: 100%;
 }
 
 #controls > * {
@@ -104,4 +102,10 @@ header, footer {
 
 .hide {
     display: none;
+}
+
+#pause {
+    text-align: center;
+    position: fixed;
+    top: 200px;
 }
