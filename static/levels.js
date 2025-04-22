@@ -11,12 +11,24 @@ let door2_3;
 const levels = [
     {
       id: 1,
-      enemySpawnQueue: [],
+      enemySpawnQueue: ["skeleton 1"],
       
     },
     {
       id: 2,
-      enemySpawnQueue: ["archer 5"]
+      enemySpawnQueue: []
+    },
+    {
+      id: 3,
+      enemySpawnQueue: []
+    },
+    {
+      id: 4,
+      enemySpawnQueue: []
+    },
+    {
+      id: 5,
+      enemySpawnQueue: ["boss 1"]
     },
   ];
   

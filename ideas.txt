@@ -1,35 +1,10 @@
-predictive projectiles that go to where the player is currently headed
 lava tiles
 spike tiles
-archers
 different element mages
-bosses
-coins
-items
-player other weapons
-player death animation
-take damage animation
 teleporting enemy (use handleFood function as base)
-dashing enemy, dashing player
 be able to attack projectiles
 once player goes past certain area the enemies get up
 character faces where mouse is on shoot
 dust cloud animation when sprinting
-remove projectile delay variables
 extra let e of enemies in enemy projectiles function
-healer enemy
-
-visual cues for powerups 
-
-DONE
-
-score 
-knockback
-sword slash
-resize swordhitbox to 96*96 and line up animation without extra variables
-health bars
-stamina
-enemy spawn animation
-player inventory
-player bow
-damage numbers
+show cheat on leaderboard

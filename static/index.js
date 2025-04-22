@@ -1,5 +1,6 @@
 import levels from './levels.js';
-let currentLevel = 0;
+let currentLevel = 1;
+let currentLevelIndex = currentLevel - 1;
 
 let canvas;
 let context;
@@ -125,7 +126,6 @@ let swordAnimation = {
 
 let enemyProjectiles = [];
 let projectileSpeed = 8;
-let projectileDelay = 60;
 let totalProjectiles = 0;
 
 let playerWalk = new Image();
@@ -143,12 +143,22 @@ let attackImage;
 let skeletonWalk = new Image();
 let skeletonAttack = new Image();
 let skeletonDead = new Image();
+let armoured_skeletonWalk = new Image();
+let armoured_skeletonAttack = new Image();
+let armoured_skeletonDead = new Image();
 let archerWalk = new Image();
 let archerAttack = new Image();
 let archerDead = new Image();
 let mageWalk = new Image();
 let mageAttack = new Image();
 let mageDead = new Image();
+let paladinWalk = new Image();
+let paladinAttack = new Image();
+let paladinDead = new Image();
+let bossWalk = new Image();
+let bossAttack = new Image();
+let bossDead = new Image();
+
 let enemyHealthBarImage = new Image();
 
 let arrowImage = new Image();
@@ -167,6 +177,16 @@ let enemyImages = {
         "attack" : skeletonAttack,
         "dead" : skeletonDead,
     },
+    "armoured_skeleton":{
+        "walk" : armoured_skeletonWalk,
+        "attack" : armoured_skeletonAttack,
+        "dead" : armoured_skeletonDead,
+    },
+    "paladin":{
+        "walk" : paladinWalk,
+        "attack" : paladinAttack,
+        "dead" : paladinDead,
+    },
     "archer":{
         "walk" : archerWalk,
         "attack" : archerAttack,
@@ -177,6 +197,11 @@ let enemyImages = {
         "attack" : mageAttack,
         "dead" : mageDead,
     },
+    "boss":{
+        "walk" : bossWalk,
+        "attack" : bossAttack,
+        "dead" : bossDead,
+    },
 }
 
 let enemyHealthBar = {
@@ -185,7 +210,7 @@ let enemyHealthBar = {
     frame: 10
 }
 
-let enemySpawnQueue = levels[currentLevel]["enemySpawnQueue"];
+let enemySpawnQueue = levels[currentLevelIndex]["enemySpawnQueue"];
 
 let enemyId = 0;
 
@@ -208,6 +233,8 @@ let currentSecond;
 
 let resultElement;
 let levelComplete;
+
+let spawn;
 let exit;
 
 document.addEventListener("DOMContentLoaded", init, false);
@@ -242,8 +269,16 @@ function init() {
         width: 32,
         height: 64,
     }
+
+    spawn = {
+        x: canvas.width/2-128,
+        y: boundaryLocation()["up"],
+        width: 256,
+        height: 128,
+    }
+
     player.x = canvas.width/2-32;
-    player.y = 64;
+    player.y = 96;
 
     load_assets([
         {"var": playerWalk, "url": "static/images/player_animations/PLAYER_WALK.png"},
@@ -258,12 +293,21 @@ function init() {
         {"var": skeletonWalk, "url": "static/images/enemies/skeleton/SKELETON_WALK.png"},
         {"var": skeletonAttack, "url": "static/images/enemies/skeleton/SKELETON_ATTACK.png"},
         {"var": skeletonDead, "url": "static/images/enemies/skeleton/SKELETON_DEAD.png"},
+        {"var": armoured_skeletonWalk, "url": "static/images/enemies/armoured_skeleton/ARMOURED_SKELETON_WALK.png"},
+        {"var": armoured_skeletonAttack, "url": "static/images/enemies/armoured_skeleton/ARMOURED_SKELETON_ATTACK.png"},
+        {"var": armoured_skeletonDead, "url": "static/images/enemies/armoured_skeleton/ARMOURED_SKELETON_DEAD.png"},
         {"var": archerWalk, "url": "static/images/enemies/archer/ARCHER_WALK.png"},
         {"var": archerAttack, "url": "static/images/enemies/archer/ARCHER_ATTACK.png"},
         {"var": archerDead, "url": "static/images/enemies/archer/ARCHER_DEAD.png"},
         {"var": mageWalk, "url": "static/images/enemies/mage/MAGE_WALK.png"},
         {"var": mageAttack, "url": "static/images/enemies/mage/MAGE_ATTACK.png"},
         {"var": mageDead, "url": "static/images/enemies/mage/MAGE_DEAD.png"},
+        {"var": bossWalk, "url": "static/images/enemies/boss/BOSS_WALK.png"},
+        {"var": bossAttack, "url": "static/images/enemies/boss/BOSS_ATTACK.png"},
+        {"var": bossDead, "url": "static/images/enemies/boss/BOSS_DEAD.png"},
+        {"var": paladinWalk, "url": "static/images/enemies/paladin/PALADIN_WALK.png"},
+        {"var": paladinAttack, "url": "static/images/enemies/paladin/PALADIN_ATTACK.png"},
+        {"var": paladinDead, "url": "static/images/enemies/paladin/PALADIN_DEAD.png"},
         {"var": enemyHealthBarImage, "url": "static/images/stats/ENEMY_HEALTHBAR.png"},
         {"var": arrowImage, "url": "static/images/enemies/archer/ARROW.png"},
         {"var": fireball, "url": "static/images/enemies/mage/FIREBALL.png"},
@@ -303,6 +347,12 @@ function draw() {
                         player.x, player.y, player.width, player.height);
     }
     
+    for (let e of enemies) { // enemies dont move until player moves certain distance (out of "spawn" area)
+        if (!collides(player, spawn)) {
+            e.canSpawn = true;
+        }
+    }
+
     handleAttacking();
 
     handleEnemyAttacking();
@@ -382,6 +432,12 @@ function displayMap() {
 }
 
 function endOfLevel() {
+    if (currentLevel === 5) {
+        resultElement.innerHTML = "YOU WON"
+        resultElement.className = "green"
+        stop();
+        return
+    }
     if (!doorsOpened) {
         doorsOpened = true;
         door2 = openDoor(door2);
@@ -395,9 +451,11 @@ function endOfLevel() {
 }
 
 function updateLevel() {
+    maxPotionUses++;
+    toolbar.frameY = maxPotionUses;
     currentLevel ++;
     player.score += 100;
-    enemySpawnQueue = levels[currentLevel]["enemySpawnQueue"];
+    enemySpawnQueue = levels[currentLevelIndex]["enemySpawnQueue"];
 }
 
 function boundaryLocation() {
@@ -450,7 +508,7 @@ function displayHUD() {
         timeFrameCounter --;
     }
 
-    levelElement.innerHTML = `LEVEL ${currentLevel+1}`
+    levelElement.innerHTML = `LEVEL ${currentLevel}`
 
     powerupElement.innerHTML = powerupMessage;
 
@@ -696,7 +754,7 @@ function handleAttacking() {
             }
             
             for (let e of enemies) {
-                if (collides(e, swordHitbox) && !e.isDying) {
+                if (collides(e, swordHitbox) && !e.isDying && e.canSpawn) {
                     if (! e.isHit) {
                         if (player.swordFrame <= 3) {
                             e.health -= player.damage;
@@ -712,8 +770,7 @@ function handleAttacking() {
                         e.isHit = true;
                     }
 
-                    else if (player.swordFrame <= 3 && e.isHit && enemyInfo[e.type]["canKnockback"] === true) {
-
+                    else if (player.swordFrame <= 3 && e.isHit && enemyInfo[e.type]["canKnockback"]) {
                         // knockback enemies
                         if (player.frameY === 1) { // left
                             e.x -= 3*e.xChange;
@@ -928,7 +985,7 @@ function handleProjectiles() {
             player.frameY = 3;
         }
         for (let e of enemies) {
-            if (collides(projectileHitbox, e.enemyHitbox) && !e.isDying) {
+            if (collides(projectileHitbox, e.enemyHitbox) && !e.isDying && e.canSpawn) {
                 e.health -= player.bowDamage;
                 e.damageFrame = player.bowDamage -1;
                 playerProjectiles.splice(playerProjectiles.indexOf(p), 1)
@@ -984,35 +1041,53 @@ let enemies = [];
 // the order to spawn enemies
 let enemyInfo = {
     "skeleton" : {
-        "amount": 0,
-        "maxHealth": 1,
+        "maxHealth": 3,
+        "canKnockback": true,
+        "attackType": "melee"
+    },
+    "armoured_skeleton" : {
+        "maxHealth": 6,
+        "canKnockback": true,
+        "attackType": "melee"
+    },
+    "paladin" : {
+        "maxHealth": 10,
         "canKnockback": true,
         "attackType": "melee"
     },
     "archer" : {
-        "amount": 0,
-        "maxHealth": 1,
+        "maxHealth": 3,
         "canKnockback": true,
         "attackType": "range",
         "maxProjectiles": 1,
         "projectile": arrowImage,
         "attackAnimationFrames": 13,
         "projectileAnimationFrames": 2,
+        "delay": 60,
     },
     "mage" : {
-        "amount": 0,
-        "maxHealth": 1,
+        "maxHealth": 5,
         "canKnockback": true,
         "attackType": "range",
-        "maxProjectiles": 1,
+        "maxProjectiles": 2,
         "projectile": fireball,
         "attackAnimationFrames": 7,
         "projectileAnimationFrames": 8,
+        "delay": 30
+    },
+    "boss" : {
+        "maxHealth": 50,
+        "canKnockback": false,
+        "attackType": "range",
+        "maxProjectiles": 3,
+        "projectile": icicle,
+        "attackAnimationFrames": 7,
+        "projectileAnimationFrames": 8,
+        "delay": 15
     },
 }
 
 let breakCheck;
-
 function createEnemies() {
     breakCheck = false;
     while (enemies.length < maxEnemiesAtOnce) {
@@ -1036,7 +1111,7 @@ function createEnemies() {
             let initialAmount = amount;
 
         for (amount; amount > 0; amount --) {
-
+            let isValid = false;
             let e = {
                 type: type,
                 health: enemyInfo[type]["maxHealth"],
@@ -1066,6 +1141,7 @@ function createEnemies() {
                 isHit: false,
                 hitFrameCounter: 0,
                 damageFrame: -1,
+                canSpawn: false,
             }
             
             e.enemyHitbox = {
@@ -1076,8 +1152,8 @@ function createEnemies() {
             }
 
             if (enemyInfo[e.type]["attackType"] === "range") {
-                e.canFire = false;
-                e.projectileFrameCounter = 0
+                // e.canFire = false;
+                e.projectileCounter = 0;
                 totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
             }
             
@@ -1085,7 +1161,7 @@ function createEnemies() {
             enemyId ++;
 
             e.x = randint(boundaryLocation()["left"]*8, boundaryLocation()["right"]-e.width);
-            e.y = randint(boundaryLocation()["up"], boundaryLocation()["down"]-e.height);
+            e.y = randint(boundaryLocation()["up"]*4, boundaryLocation()["down"]-e.height);
 
             // convert co-ordinates to multiples of 4
             e.x = (e.x + (4 - e.x % 4));
@@ -1117,7 +1193,9 @@ function drawEnemies() {
         // spawn animation - the reverse of dying animation
         if (e.isSpawning) {
             e.moveUp = e.moveLeft = e.moveDown = e.moveRight = false;
-            e.spawnFrameCounter++;
+            if (e.canSpawn) {
+                e.spawnFrameCounter++;
+            }
             if (e.spawnFrameCounter === 5) {
                 e.spawnFrameCounter = 0;
                 e.spawnFrame--;
@@ -1204,7 +1282,7 @@ function moveEnemies() {
                 continue;
             }
         } 
-        if (! e.isHit) {
+        if (! e.isHit || !enemyInfo[e.type]["canKnockback"]) {
             // movement
             if (player.x - e.width > e.x) { // right
                 e.x += e.xChange;
@@ -1241,7 +1319,7 @@ function moveEnemies() {
         }
     }
 }
-
+let j = 30;
 function handleEnemyAttacking() {
     for (let e of enemies) {
         if (e.isAttacking) {
@@ -1290,27 +1368,31 @@ function handleEnemyAttacking() {
                     e.attackFrameX++;
                     
                     if (e.attackFrameX === enemyInfo[e.type]["attackAnimationFrames"]) {
-                        e.canFire = true;
+                        // e.canFire = true;
                         e.isAttacking = false;
                         e.attackFrameX = 0;
                     }
                 }
-                
                 if ((enemyProjectiles.length < totalProjectiles) 
-                    && (e.projectileFrameCounter < enemyInfo[e.type]["maxProjectiles"]) && e.canFire) {
+                    && (e.projectileCounter < enemyInfo[e.type]["maxProjectiles"]) && j === 0) {
                     let p = {
                         id: e.id,
                         hasFired: false,
-                        delay: projectileDelay,
+                        delay: enemyInfo[e.type]["delay"],
                         x: e.x,
                         y: e.y,
                         width: 64,
                         height: 64,
                         frameX: 0,
                         frameY: 0,
+                        canFire: true, 
                     }
                     enemyProjectiles.push(p);
-                    e.projectileFrameCounter ++;
+                    e.projectileCounter ++;
+                    j = 30;
+                }
+                else if (j > 0 ){
+                    j--;
                 }
             }
         }
@@ -1320,10 +1402,13 @@ function handleEnemyAttacking() {
 function handleEnemyProjectiles() {
     for (let p of enemyProjectiles) {
         for (let e of enemies) {
-            if (p.id === e.id && e.canFire) {
-                if (p.delay != 0) {
-                    p.delay --;
-                }
+            if (p.delay > 0) {
+                p.delay --;
+            }
+            else {
+                p.canFire = true;
+            }
+            if (p.id === e.id && p.canFire) {
 
                 let projectileHitbox = {
                     x: p.x,
@@ -1414,8 +1499,8 @@ function handleEnemyProjectiles() {
                             p.x = e.x;
                             p.y = e.y;
                             p.hasFired = false;
-                            e.canFire = false;
-                            p.delay = projectileDelay
+                            p.canFire = false;
+                            p.delay = enemyInfo[e.type]["delay"];
                             break;
                         }
                     }
@@ -1431,6 +1516,10 @@ function handleEnemyProjectiles() {
                         }
                     }
                 }
+            }
+            else {
+                p.x = e.x;
+                p.y = e.y;
             }
         }
     }
