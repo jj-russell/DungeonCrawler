@@ -2,7 +2,7 @@ let levels = [
     {
       id: 1,
       enemySpawnQueue: ["boss 1"]//["skeleton 5", "archer 5", "skeleton 5", "archer 5", "skeleton 5", 
-                        //"archer 5", "skeleton 5", "archer 5", "skeleton 5", "archer 5",]
+                       // "archer 5", "skeleton 5", "archer 5", "skeleton 5", "archer 5",]
       
     },
     {
@@ -25,7 +25,7 @@ let levels = [
     },
     {
       id: 5,
-      enemySpawnQueue: ["boss 1"]
+      enemySpawnQueue: ["boss 1", "paladin 3", "mage 3"]
     },
   ];
   

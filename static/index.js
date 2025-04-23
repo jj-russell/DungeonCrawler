@@ -13,7 +13,7 @@ let xhttp;
 let hasCheated = false;
 
 let xChange, yChange, squareSize;
-xChange = yChange = squareSize = 24;
+xChange = yChange = squareSize = 32;
 
 let iFrames = 0;
 let iFrameMax = 45;
@@ -182,6 +182,8 @@ let damageImage = new Image();
 let toolbarImage = new Image();
 let healthGainImage = new Image();
 
+let spikesImage = new Image();
+
 let powerupImage = new Image();
 
 let audioUp = new Image();
@@ -197,8 +199,8 @@ let bowAudio = new Audio();
 
 let backgroundMusic = new Audio();
 
-
 let boss;
+let bossEffect = new Image();
 
 let enemyImages = {
     "skeleton":{
@@ -443,8 +445,10 @@ function init() {
         {"var": toolbarImage, "url": "static/images/stats/TOOLBAR.png"},
         {"var": healthGainImage, "url": "static/images/stats/HEALTH_GAIN.png"},
         {"var": powerupImage, "url": "static/images/stats/POWERUPS.png"},
-        {"var": audioUp, "url": "static/images/icons/volume-up.svg"},
-        {"var": audioMute, "url": "static/images/icons/volume-mute.svg"},
+        {"var": spikesImage, "url": "static/images/spikes.png"},
+        {"var": bossEffect, "url": "static/images/bossEffect.svg"},
+        {"var": audioUp, "url": "static/images/volume-up.svg"},
+        {"var": audioMute, "url": "static/images/volume-mute.svg"},
         {"var": walkAudio, "url": "static/audio/walk.wav"},
         {"var": sprintAudio, "url": "static/audio/sprint.wav"},
         {"var": healAudio, "url": "static/audio/heal.wav"},
@@ -1454,7 +1458,7 @@ function handleBoss () {
         let currentTime = Date.now();
         let elapsed = currentTime - bossEnemySpawnTimer;
 
-        if (elapsed >= 30000) {
+        if (elapsed >= 20000) {
             bossEnemiesCanSpawn = true;
             enemySpawnQueue.push("paladin 1", "mage 2");
         }
@@ -1873,7 +1877,7 @@ function createObstacles() {
     while (obstacles.length < obstaclesAmount) {
         let isValid = true;
         let obX = randint(boundaryLocation()["left"]*8, boundaryLocation()["right"]-2*squareSize);
-        let obY = randint(boundaryLocation()["up"], boundaryLocation()["down"]-2*squareSize);
+        let obY = randint(boundaryLocation()["up"]*4, boundaryLocation()["down"]-2*squareSize);
 
         if (!(obX % squareSize === 0)) {
             obX = (Math.round(obX / squareSize) * squareSize) + 1;
@@ -1900,66 +1904,22 @@ function createObstacles() {
             isValid = false;
             break;
             }
-        }   
-
-        if (isValid) {
-            let numSides = randint(1, 4);
-            let i = 0;
-            
-            let baseObX = obX;
-            let baseObY = obY;
-            
-            // Add the initial obstacle
-            let initialOb = {
+        } 
+        if (isValid) {    
+            let o = { 
                 x: obX, 
                 y: obY, 
                 width: squareSize,
-                height: squareSize
+                height: squareSize, 
             };
-
-            obstacles.push(initialOb);
-            
-            while (i < numSides) {
-                let side = randint(1, 4);
-                
-                let newObX = baseObX;
-                let newObY = baseObY;
-                
-                if (side === 1) {
-                    newObX += xChange;
-                } else if (side === 2) {
-                    newObX -= xChange;
-                } else if (side === 3) {
-                    newObY += yChange;
-                } else if (side === 4) {
-                    newObY -= yChange;
-                }
-                // obstacle out of bounds
-                if (newObX + squareSize > canvas.width - squareSize ||
-                    newObY + squareSize > canvas.height - squareSize ||
-                    newObX < squareSize ||
-                    newObY < squareSize) {
-                    
-                    continue;
-                }
-                
-                i++;
-                
-                let o = { 
-                    x: newObX, 
-                    y: newObY, 
-                    width: squareSize,
-                    height: squareSize, 
-                };
                 
                 obstacles.push(o);
-            }
         }
     }
 
     context.fillStyle = "cyan";
     for (let o of obstacles) {
-        context.fillRect(o.x, o.y, o.size, o.size);
+        context.drawImage(spikesImage, o.x, o.y, o.width, o.height);
 
         if (collides(player, o)) {
             if (iFrames === 0) {
@@ -2140,7 +2100,7 @@ function handlePowerups() {
 
 let levelTransitionActive = false;
 let transitionStartTime = 0;
-let transitionDuration = 5000;
+let transitionDuration = 1//4000;
 let nextLevelReady = false;
 
 function handleLevelTransition() {
@@ -2199,6 +2159,7 @@ function endOfLevel() {
         
         powerupSpawnTimer = randint(5, 15)
 
+        obstacles = [];
         player.x = canvas.width/2 -32;
         player.y = 64;
         levelComplete = false;
