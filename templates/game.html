@@ -1,10 +1,13 @@
 {% extends "base.html" %}
     {% block styles %}
-    <script src="{{ url_for('static', filename='index.js') }}" type="module"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='game.css') }}" />
     {% endblock %}
 {% block main_content %}
-        <p id="startPause">Press B to pause and see controls, and enable music</p>
+        <section id="startPause">
+            <p>Press B to pause and see controls</p>
+            <p>Press P to enable cheats. If you use cheats it will show on the leaderboard</p>
+            <p>Press M to clear the level.</p>
+        </section>
 
         <section id="levelTransition">
             <p></p>
@@ -18,8 +21,6 @@
             <p class="odd">left click to attack / use potion</p>
             <p class="even">kill enemies and finish quickly to gain score</p>
             <p class="odd">defeat the final boss to win!</p>
-            <p class="even">Press P to enable cheats</p>
-            <p class="odd">if you use cheats it will show on the leaderboard</p>
         </section>
 
         <section id="end" class="hide">
@@ -48,24 +49,16 @@
                 <p id="powerup"></p>
             </section>
 
-            <img id="audioImage" src="{{ url_for('static', filename='images/icons/volume-mute.svg') }}" alt="Clickable" onclick="handleAudio()" style="cursor: pointer;">
+            <img id="audioImage" src="{{ url_for('static', filename='images/icons/volume-mute.svg') }}" 
+            alt="Clickable" onclick="backgroundAudio()" style="cursor: pointer;">
+
+            
+            <button id="startButton" alt="Start Game" onclick="" style="cursor: pointer;">Play</button>
+
             <audio id="backgroundMusic" src="{{ url_for('static', filename='sfx/music/Goblins_Dance_(Battle).wav') }}"></backgroundMusic>
 
-            <script>
-                function handleAudio() {
-                    let backgroundMusic = document.getElementById("backgroundMusic");
-                    let audioImage = document.getElementById("audioImage");
-                    if (backgroundMusic.paused) {
-                        backgroundMusic.play();
-                        backgroundMusic.loop = true;
-                        audioImage.src = "{{ url_for('static', filename='images/icons/volume-up.svg') }}";
-                    }
-                    else {
-                        backgroundMusic.pause();
-                        audioImage.src = "{{ url_for('static', filename='images/icons/volume-mute.svg') }}";
-                    }
-                }
-          
+        <script src="{{ url_for('static', filename='index.js') }}" type="module"></script>
+        <script>
             let highscore_value = '{{ highscore|tojson|safe }}'
             highscore_value = JSON.parse(highscore_value);
         </script>

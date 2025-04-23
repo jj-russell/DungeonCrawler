@@ -47,6 +47,7 @@ let backgroundImage = new Image();
 
 let maxPlayerHealth = 5;
 let maxPlayerStam = 5;
+
 let player = {
     score: 0,
     health: maxPlayerHealth,
@@ -75,6 +76,7 @@ let player = {
     moveFrameCounter: 0,
     healthGainFrameCounter: 0,
     hasPowerup: false,
+    damageFrame: -1,
 }
 
 let moveLeft, moveRight, moveUp, moveDown;
@@ -182,6 +184,17 @@ let healthGainImage = new Image();
 
 let powerupImage = new Image();
 
+let audioUp = new Image();
+let audioMute = new Image();
+
+let walkAudio = new Audio();
+
+let backgroundMusic = new Audio();
+
+let swordSwingAudio = new Audio();
+let swordHitAudio = new Audio();
+let enemyHitAudio = new Audio();
+
 let boss;
 
 let enemyImages = {
@@ -235,25 +248,29 @@ let enemies = [];
 let enemyInfo = {
     "skeleton": {
         "maxHealth": 3,
+        "attackDamage": 1,
         "speed": 4,
         "canKnockback": true,
         "attackType": "melee"
     },
     "armoured_skeleton": {
-        "maxHealth": 4,
+        "maxHealth": 5,
+        "attackDamage": 1,
         "speed": 5,
         "canKnockback": true,
         "attackType": "melee"
     },
     "paladin": {
-        "maxHealth": 10,
-        "speed": 6,
+        "maxHealth": 7,
+        "attackDamage": 2,
+        "speed": 5,
         "canKnockback": true,
         "attackType": "melee"
     },
     "archer": {
         "maxHealth": 1,
-        "speed": 4,
+        "attackDamage": 1,
+        "speed": 3,
         "attackDistance": 4,
         "canKnockback": true,
         "attackType": "range",
@@ -265,7 +282,8 @@ let enemyInfo = {
     },
     "armoured_archer": {
         "maxHealth": 3,
-        "speed": 4,
+        "attackDamage": 1,
+        "speed": 3,
         "attackDistance": 4,
         "canKnockback": true,
         "attackType": "range",
@@ -277,7 +295,8 @@ let enemyInfo = {
     },
     "mage": {
         "maxHealth": 4,
-        "speed": 6,
+        "attackDamage": 2,
+        "speed": 3,
         "attackDistance": 6,
         "canKnockback": true,
         "attackType": "range",
@@ -289,6 +308,7 @@ let enemyInfo = {
     },
     "boss": {
         "maxHealth": 50,
+        "attackDamage": 2,
         "speed": 6,
         "attackDistance": 8,
         "canKnockback": false,
@@ -354,9 +374,7 @@ function init() {
 
     window.addEventListener("keydown", activate, false);
     window.addEventListener("keyup", deactivate, false);
-    window.addEventListener("keydown", handleInventory, false);
-    window.addEventListener("keydown", enableCheats, false);
-    window.addEventListener("keydown", handleKeyPress, false);
+    window.addEventListener("keydown", handleKeyPresses, false);
 
     // disable right click
     window.addEventListener("contextmenu", function(event) {
@@ -420,6 +438,12 @@ function init() {
         {"var": toolbarImage, "url": "static/images/stats/TOOLBAR.png"},
         {"var": healthGainImage, "url": "static/images/stats/HEALTH_GAIN.png"},
         {"var": powerupImage, "url": "static/images/stats/POWERUPS.png"},
+        {"var": audioUp, "url": "static/images/icons/volume-up.svg"},
+        {"var": audioMute, "url": "static/images/icons/volume-mute.svg"},
+        {"var": walkAudio, "url": "static/audio/walk"},
+        {"var": backgroundMusic, "url": "static/audio/Goblins_Dance_(Battle).wav"},
+        {"var": swordSwingAudio, "url": "static/audio/sword_swing.wav"},
+        {"var": swordHitAudio, "url": "static/audio/sword_hit.wav"},
     ], draw)
     
     draw();
@@ -618,35 +642,15 @@ function displayHUD() {
     }
 }
 
-function enableCheats(event) {
-    let key = event.key;
-    if (key === "p" || key === "P") {
-        if (! player.isCheating) {
-            hasCheated = true;
-            player.isCheating = true;
-            cheatStatus = 'ON';
-            cheatClass = 'green';
-        }
-        else {
-            player.isCheating = false;
-            cheatStatus = 'OFF';
-            cheatClass = 'red';
-        }
-    }
-}
-
-function handleKeyPress(event) {
+function handleKeyPresses(event) {
     let key = event.key
+    // pause
     if (key === 'b' || key === 'B') {
         togglePause();
     }
-}
 
-function handleInventory(event) {
+    // cycling through inventory
     if (! player.isAttacking) {
-        let key = event.key;
-
-        // cycling through inventory
         if (key === "e" || key === "E") {
             showCurrentItem = true;
             if (current_item === inventory.length-1) {
@@ -669,6 +673,29 @@ function handleInventory(event) {
             toolbar.frameX = current_item;
             showCurrentItemCounter = 0;
         }
+    }
+
+    // enable cheats
+    if (key === "p" || key === "P") {
+        if (! player.isCheating) {
+            hasCheated = true;
+            player.isCheating = true;
+            cheatStatus = 'ON';
+            cheatClass = 'green';
+        }
+        else {
+            player.isCheating = false;
+            cheatStatus = 'OFF';
+            cheatClass = 'red';
+        }
+    }
+    
+    // clear level
+    if (key === "m" || key === "M") {
+        if (! player.isCheating) {
+            hasCheated = true;
+        }
+        enemies = enemySpawnQueue = [];
     }
 }
 
@@ -862,6 +889,7 @@ function handleAttacking() {
             
             for (let e of enemies) {
                 if (collides(e, swordHitbox) && !e.isDying && e.canSpawn && !e.isSpawning) {
+                    swordHitAudio.play();
                     if (! e.isHit) {
                         if (player.swordFrame <= 3) {
                             e.health -= player.damage;
@@ -921,6 +949,7 @@ function handleAttacking() {
                 player.isAttacking = false;
                 player.swordFrame = 0;
             }
+            swordSwingAudio.play();
         }
     
         else if (inventory[current_item] === "bow") {
@@ -981,8 +1010,7 @@ function handleAttacking() {
     }
 
     // kill enemies
-    for (let i = enemies.length - 1; i >= 0; i--) {
-        let e = enemies[i];
+    for (let e of enemies) {
         if (e.isDying) {
             // remove projectile associated with enemy
             for (let p of enemyProjectiles) {
@@ -995,7 +1023,7 @@ function handleAttacking() {
                 e.deathFrameCounter = 0;
                 e.deathFrame++;
                 if (e.deathFrame === 6) {
-                    enemies.splice(i, 1);
+                    enemies.splice(enemies.indexOf(e), 1);
                     if (enemyInfo[e.type]["attackType"] === "range"){
                         totalProjectiles -= enemyInfo[e.type]["maxProjectiles"];
                     }
@@ -1455,7 +1483,7 @@ function handleEnemyAttacking() {
                     
                     if (e.attackFrameX === 6 && collides(playerHitbox, enemySwordHitbox)) {
                         if (iFrames === 0 && !e.isDying) {
-                            takeDamage();
+                            takeDamage(enemyInfo[e.type]["attackDamage"]);
                         }
                     }
                     
@@ -1586,7 +1614,7 @@ function handleEnemyProjectiles() {
 
                 if (collides(playerHitbox, projectileHitbox)) {
                     if (iFrames === 0 && !e.isDying) {
-                        takeDamage();
+                        takeDamage(enemyInfo[e.type]["attackDamage"]);
                     }
                 }
                 let x = projectileHitbox.x;
@@ -1645,12 +1673,13 @@ function calculateDirection(fromX, fromY, toX, toY) {
     return { dx, dy };
 }
 
-function takeDamage() {
+function takeDamage(enemyDamage) {
     if (!player.isCheating && !powerupInvincibility) {
         if (player.health > 0) {
             iFrames = iFrameMax;
-            player.health--;
-            playerHealthBar.frameY --;
+            player.health -= enemyDamage;
+            playerHealthBar.frameY -= enemyDamage;
+            player.damageFrame = enemyDamage -1;
             player.isHit = true;
         }
     }
@@ -1664,7 +1693,7 @@ function playerStats() {
         player.x, player.y, staminaBar.width, staminaBar.height);
 
     if (player.isHit) {
-        context.drawImage(damageImage, 0, 0, 24, 16,
+        context.drawImage(damageImage, player.damageFrame*24, 0, 24, 16,
             player.x+player.width/3, player.y-32, 24, 16);
     }
     
@@ -1678,7 +1707,9 @@ function playerStats() {
 
     if (iFrames > 0) iFrames -= 1;
 
-    if (player.health === 0) {
+    if (player.health <= 0) {
+        player.health = 0;
+        playerHealthBar.frameY = 0;
         resultElement.innerHTML = "YOU DIED"
         resultElement.className = "red"
         stop();
@@ -1755,7 +1786,7 @@ function collides(obj1, obj2) {
 
 function stop() {
     window.removeEventListener("keydown", activate, false);
-    window.removeEventListener("keydown", handleKeyPress, false);
+    window.removeEventListener("keydown", handleKeyPresses, false);
     window.cancelAnimationFrame(request_id);
 
     endElement.className = "";
@@ -1917,7 +1948,7 @@ function createObstacles() {
 
         if (collides(player, o)) {
             if (iFrames === 0) {
-                takeDamage();
+                takeDamage(1);
             }
         }
     }
@@ -2158,6 +2189,9 @@ function endOfLevel() {
 }
 
 function updateLevel() {
+    currentLevel ++;
+    currentLevelIndex ++;
+    
     maxPotionUses++;
     toolbar.frameY = maxPotionUses;
 
@@ -2165,13 +2199,34 @@ function updateLevel() {
     playerHealthBar.frameX ++;
     player.health = playerHealthBar.frameY = maxPlayerHealth;
 
-    
     maxPlayerStam ++;
     staminaBar.frameX ++;
     player.stamina = maxPlayerStam*10;
-    staminaBar.frameY = maxPlayerStam
-    currentLevel ++;
-    currentLevelIndex ++;
+    staminaBar.frameY = maxPlayerStam;
+
+    if (currentLevel % 2 === 0) {
+        player.damage ++;
+        player.bowDamage ++;
+        normalPlayerDamage ++;
+        normalPlayerBowDamage ++;
+    }
+
     player.score += 100;
     enemySpawnQueue = levels[currentLevelIndex]["enemySpawnQueue"];
 }
+
+function backgroundAudio() {
+    let backgroundMusic = document.getElementById("backgroundMusic");
+    let audioImage = document.getElementById("audioImage");
+    if (backgroundMusic.paused) {
+        backgroundMusic.play();
+        backgroundMusic.loop = true;
+        audioImage.src = audioUp.src;
+    }
+    else {
+        backgroundMusic.pause();
+        audioImage.src = audioMute.src;
+    }
+}
+
+window.backgroundAudio = backgroundAudio;

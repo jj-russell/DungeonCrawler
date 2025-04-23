@@ -1,10 +1,8 @@
-let l1 = ["skeleton 5", "archer 5", "skeleton 5", "archer 5", "skeleton 5", 
-  "archer 5", "skeleton 5", "archer 5", "skeleton 5", "archer 5",]
-
 let levels = [
     {
       id: 1,
-      enemySpawnQueue: []
+      enemySpawnQueue: ["skeleton 5", "archer 5", "skeleton 5", "archer 5", "skeleton 5", 
+                        "archer 5", "skeleton 5", "archer 5", "skeleton 5", "archer 5",]
       
     },
     {
@@ -13,11 +11,17 @@ let levels = [
     },
     {
       id: 3,
-      enemySpawnQueue: ["skeleton 1"]
+      enemySpawnQueue: ["armoured_skeleton 10", "armoured_archer 5", "armoured_skeleton 5", "armoured_archer 5", 
+                        "armoured_skeleton 5", "armoured_archer 6", "armoured_skeleton 5", "armoured_archer 3", 
+                        "armoured_skeleton 10", "armoured_archer 4", "armoured_skeleton 5", "armoured_archer 7", 
+      ]
     },
     {
       id: 4,
-      enemySpawnQueue: ["skeleton 1"]
+      enemySpawnQueue: ["paladin 5", "mage 5", "paladin 6", "mage 4", 
+                        "paladin 7", "mage 3", "paladin 8", "mage 2", "mage 10",
+
+      ]
     },
     {
       id: 5,
