@@ -13,7 +13,7 @@
                 <p><a href="{{url_for('index')}}">Main Menu</a></p>
             </nav>
             <h1>{{title}}</h1>
-            <div id="user_options">
+            <section id="user_options">
                 {% if g.user %}
                     <p>Logged in as: <i>{{ g.user }}</i></p>
                     <p><a href="{{url_for('logout')}}">Logout</a></p>
@@ -21,7 +21,7 @@
                     <p><a href="{{url_for('register')}}">Register</a></p>
                     <p><a href="{{url_for('login')}}">Login</a></p>
                 {% endif %}
-            </div>
+            </section>
         </header>
         <main>
             {% block main_content %}

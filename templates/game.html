@@ -4,7 +4,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='game.css') }}" />
     {% endblock %}
 {% block main_content %}
-        <p id="startPause">Press B to pause and see controls</p>
+        <p id="startPause">Press B to pause and see controls, and enable music</p>
 
         <section id="levelTransition">
             <p></p>
@@ -48,7 +48,24 @@
                 <p id="powerup"></p>
             </section>
 
-        <script>
+            <img id="audioImage" src="{{ url_for('static', filename='images/icons/volume-mute.svg') }}" alt="Clickable" onclick="handleAudio()" style="cursor: pointer;">
+            <audio id="backgroundMusic" src="{{ url_for('static', filename='sfx/music/Goblins_Dance_(Battle).wav') }}"></backgroundMusic>
+
+            <script>
+                function handleAudio() {
+                    let backgroundMusic = document.getElementById("backgroundMusic");
+                    let audioImage = document.getElementById("audioImage");
+                    if (backgroundMusic.paused) {
+                        backgroundMusic.play();
+                        backgroundMusic.loop = true;
+                        audioImage.src = "{{ url_for('static', filename='images/icons/volume-up.svg') }}";
+                    }
+                    else {
+                        backgroundMusic.pause();
+                        audioImage.src = "{{ url_for('static', filename='images/icons/volume-mute.svg') }}";
+                    }
+                }
+          
             let highscore_value = '{{ highscore|tojson|safe }}'
             highscore_value = JSON.parse(highscore_value);
         </script>

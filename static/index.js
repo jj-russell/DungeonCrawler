@@ -351,7 +351,6 @@ function init() {
     controlsElement = document.querySelector("#controls");
     levelTransitionText = document.querySelector("#levelTransition > p");
     levelBuffText = document.querySelector("#levelTransition > p+p");
-    
 
     window.addEventListener("keydown", activate, false);
     window.addEventListener("keyup", deactivate, false);
@@ -484,6 +483,7 @@ function draw() {
             createPowerups();
 
             handlePowerups();
+
         }
     }
 }
@@ -536,10 +536,6 @@ function displayMap() {
             }
         }
     }
-    
-    // if (levelComplete) {
-    //     endOfLevel();
-    // }
 }
 
 function boundaryLocation() {
@@ -1765,8 +1761,11 @@ function stop() {
     endElement.className = "";
 
     let data = new FormData();
+    player.score = player.score - Math.floor(time / 10); // every 10 seconds reduces score by 1
+    if (player.score < 0) player.score = 0;
     data.append("score", player.score);
     data.append("time", time);
+
     if (hasCheated) {
         hasCheated = 1;
     }
@@ -1942,7 +1941,7 @@ let normalPlayerDamage = player.damage;
 let normalPlayerBowDamage = player.bowDamage;
 
 function createPowerups() {
-    if (!powerupCanSpawn && !player.hasPowerup) {
+    if (!powerupCanSpawn && !player.hasPowerup && !levelComplete) {
         if (powerupSpawnTimer === 0) {
             powerupSpawnTimer = randint(15, 25);
             powerupSpawnFrameCounter = 30;
@@ -2147,6 +2146,8 @@ function endOfLevel() {
             door1 = openDoor(door1);
         }
         
+        powerupSpawnTimer = randint(15, 25)
+
         player.x = canvas.width/2 -32;
         player.y = 64;
         levelComplete = false;

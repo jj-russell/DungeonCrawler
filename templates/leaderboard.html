@@ -19,7 +19,7 @@
                         {% for user in leaderboard %}
                                 <tr class="{% if user['user'] == g.user %}user_rank{% else %}other_user{% endif %}">
                                     <td>
-                                        {% if user["score"] != 0 and user["time"] != 0 %}
+                                        {% if user["score"] != 0 or user["time"] != 0 %}
                                             #{{ loop.index }}
                                         {% else %}
                                             -

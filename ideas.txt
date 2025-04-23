@@ -1,10 +1,4 @@
 lava tiles
 spike tiles
-different element mages
-teleporting enemy (use handleFood function as base)
-be able to attack projectiles
-once player goes past certain area the enemies get up
 character faces where mouse is on shoot
 dust cloud animation when sprinting
-extra let e of enemies in enemy projectiles function
-show cheat on leaderboard

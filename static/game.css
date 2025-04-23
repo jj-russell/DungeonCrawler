@@ -118,3 +118,10 @@ header, footer {
     position: fixed;
     top: 30%;
 }
+
+#audioImage {
+    max-width: 40px;
+    position: fixed;
+    right: 300px;
+    bottom: 75px;
+}

@@ -1,0 +1,16 @@
+main {
+    padding: 30px;
+}
+
+section {
+    background-color: var(--bg-four);
+    padding: 20px;
+    border-radius: 20px;
+    width: 100%;
+    text-align: center;
+}
+
+footer {
+    margin: 1em;
+    position: static;
+}
