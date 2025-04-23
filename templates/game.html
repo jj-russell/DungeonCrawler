@@ -11,7 +11,8 @@
 
         <section id="levelTransition">
             <p></p>
-            <p></p>
+            <p id="upgrades1"></p>
+            <p id="upgrades2"></p>
         </section>
 
         <section id="controls" class="hide">
@@ -36,7 +37,7 @@
 
         <p id="result"></p>
 
-        <canvas width="960" height="640px"></canvas>
+        <canvas width="960px" height="640px"></canvas>
             <section id="stats">
                 <p id="cheats"></p>
                 <p id="score"></p>
@@ -51,11 +52,6 @@
 
             <img id="audioImage" src="{{ url_for('static', filename='images/icons/volume-mute.svg') }}" 
             alt="Clickable" onclick="backgroundAudio()" style="cursor: pointer;">
-
-            
-            <button id="startButton" alt="Start Game" onclick="" style="cursor: pointer;">Play</button>
-
-            <audio id="backgroundMusic" src="{{ url_for('static', filename='sfx/music/Goblins_Dance_(Battle).wav') }}"></backgroundMusic>
 
         <script src="{{ url_for('static', filename='index.js') }}" type="module"></script>
         <script>

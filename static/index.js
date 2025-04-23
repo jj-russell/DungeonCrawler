@@ -188,12 +188,15 @@ let audioUp = new Image();
 let audioMute = new Image();
 
 let walkAudio = new Audio();
-
-let backgroundMusic = new Audio();
+let sprintAudio = new Audio();
+let healAudio = new Audio();
 
 let swordSwingAudio = new Audio();
 let swordHitAudio = new Audio();
-let enemyHitAudio = new Audio();
+let bowAudio = new Audio();
+
+let backgroundMusic = new Audio();
+
 
 let boss;
 
@@ -337,7 +340,8 @@ let cheatStatus = 'OFF';
 let cheatClass = 'red';
 let endElement;
 let levelTransitionText;
-let levelBuffText;
+let upgrades1;
+let upgrades2;
 
 let currentMinute;
 let currentSecond;
@@ -370,7 +374,8 @@ function init() {
     pauseElement = document.querySelector("#pause");
     controlsElement = document.querySelector("#controls");
     levelTransitionText = document.querySelector("#levelTransition > p");
-    levelBuffText = document.querySelector("#levelTransition > p+p");
+    upgrades1 = document.querySelector("#upgrades1");
+    upgrades2 = document.querySelector("#upgrades2");
 
     window.addEventListener("keydown", activate, false);
     window.addEventListener("keyup", deactivate, false);
@@ -440,10 +445,13 @@ function init() {
         {"var": powerupImage, "url": "static/images/stats/POWERUPS.png"},
         {"var": audioUp, "url": "static/images/icons/volume-up.svg"},
         {"var": audioMute, "url": "static/images/icons/volume-mute.svg"},
-        {"var": walkAudio, "url": "static/audio/walk"},
+        {"var": walkAudio, "url": "static/audio/walk.wav"},
+        {"var": sprintAudio, "url": "static/audio/sprint.wav"},
+        {"var": healAudio, "url": "static/audio/heal.wav"},
         {"var": backgroundMusic, "url": "static/audio/Goblins_Dance_(Battle).wav"},
         {"var": swordSwingAudio, "url": "static/audio/sword_swing.wav"},
         {"var": swordHitAudio, "url": "static/audio/sword_hit.wav"},
+        {"var": bowAudio, "url": "static/audio/bow.wav"},
     ], draw)
     
     draw();
@@ -502,7 +510,7 @@ function draw() {
 
             playerStats();
 
-            // createObstacles();
+            createObstacles();
 
             createPowerups();
 
@@ -961,6 +969,7 @@ function handleAttacking() {
             context.drawImage(playerBow, player.bowFrame*player.width, player.frameY*player.height, 64, 64,
                 player.x, player.y, 64, 64)
             if (player.bowFrame === 0) {
+                bowAudio.play();
                 let playerProjectile = {
                     x: player.x,
                     y: player.y,
@@ -989,6 +998,7 @@ function handleAttacking() {
             }
 
             if (player.isHealing) {
+                healAudio.play();
                 moveUp = moveLeft = moveDown = moveRight = false;
                 if (player.healthGainFrameCounter < 20) {
                     context.drawImage(healthGainImage, 0, 0, 24, 12,
@@ -1446,7 +1456,7 @@ function handleBoss () {
 
         if (elapsed >= 30000) {
             bossEnemiesCanSpawn = true;
-            enemySpawnQueue.push("paladin 1", "mage 1");
+            enemySpawnQueue.push("paladin 1", "mage 2");
         }
     }
 
@@ -1729,15 +1739,19 @@ function activate(event) {
 
     if ((key === "ArrowLeft" || key === "a" || key === "A")) {
         moveLeft = true;
+        walkAudio.play();
     }
     if ((key === "ArrowRight" || key === "d" || key === "D")) {
         moveRight = true;
+        walkAudio.play();
     }
     if ((key === "ArrowUp" || key === "w" || key === "W")) {
         moveUp = true;
+        walkAudio.play();
     }
     if ((key === "ArrowDown" || key === "s" || key === "S")) {
         moveDown = true;
+        walkAudio.play();
     }
     if (key === "Shift" && (moveUp || moveLeft || moveDown || moveRight)) {
         if (player.stamina === 0) {
@@ -1746,6 +1760,7 @@ function activate(event) {
         else {
             player.isSprinting = true;
         }
+        sprintAudio.play();
     }
 }
 
@@ -1955,7 +1970,7 @@ function createObstacles() {
 }
 
 let powerups = [];
-let powerupSpawnTimer = randint(15, 25);
+let powerupSpawnTimer = randint(5, 15);
 let powerupSpawnFrameCounter = 30;
 let powerupTimer = 0;
 let powerupTimeFrameCounter = 30;
@@ -1974,7 +1989,7 @@ let normalPlayerBowDamage = player.bowDamage;
 function createPowerups() {
     if (!powerupCanSpawn && !player.hasPowerup && !levelComplete) {
         if (powerupSpawnTimer === 0) {
-            powerupSpawnTimer = randint(15, 25);
+            powerupSpawnTimer = randint(5, 15);
             powerupSpawnFrameCounter = 30;
             powerupCanSpawn = true;
         }
@@ -2125,7 +2140,7 @@ function handlePowerups() {
 
 let levelTransitionActive = false;
 let transitionStartTime = 0;
-let transitionDuration = 3000;
+let transitionDuration = 5000;
 let nextLevelReady = false;
 
 function handleLevelTransition() {
@@ -2136,11 +2151,15 @@ function handleLevelTransition() {
     context.fillRect(24, 24, canvas.width-48, canvas.height-88);
     
     levelTransitionText.innerHTML = `LEVEL COMPLETE!`;
-    levelBuffText.innerHTML = 'HEALTH, STAMINA, POTION LIMIT INCREASED';
-    
+    upgrades1.innerHTML = 'HEALTH, STAMINA, POTION LIMIT INCREASED';
+    if (currentLevel % 2 === 0) {
+        upgrades2.innerHTML = 'SWORD AND BOW DAMAGE INCREASED';
+    }
+
     if (elapsed > transitionDuration - 1000) {
         levelTransitionText.innerHTML = `LEVEL ${currentLevel}`;
-        levelBuffText.innerHTML = '';
+        upgrades1.innerHTML = '';
+        upgrades2.innerHTML = '';
         
         if (!nextLevelReady) {
             nextLevelReady = true;
@@ -2151,7 +2170,8 @@ function handleLevelTransition() {
     // End transition after the specified duration
     if (elapsed >= transitionDuration) {
         levelTransitionText.innerHTML = '';
-        levelBuffText.innerHTML = '';
+        upgrades1.innerHTML = '';
+        upgrades2.innerHTML = '';
         levelTransitionActive = false;
         levelComplete = false;
     }
@@ -2177,7 +2197,7 @@ function endOfLevel() {
             door1 = openDoor(door1);
         }
         
-        powerupSpawnTimer = randint(15, 25)
+        powerupSpawnTimer = randint(5, 15)
 
         player.x = canvas.width/2 -32;
         player.y = 64;
@@ -2189,6 +2209,13 @@ function endOfLevel() {
 }
 
 function updateLevel() {
+    if (currentLevel % 2 === 0) {
+        player.damage ++;
+        player.bowDamage ++;
+        normalPlayerDamage ++;
+        normalPlayerBowDamage ++;
+    }
+
     currentLevel ++;
     currentLevelIndex ++;
     
@@ -2204,19 +2231,11 @@ function updateLevel() {
     player.stamina = maxPlayerStam*10;
     staminaBar.frameY = maxPlayerStam;
 
-    if (currentLevel % 2 === 0) {
-        player.damage ++;
-        player.bowDamage ++;
-        normalPlayerDamage ++;
-        normalPlayerBowDamage ++;
-    }
-
     player.score += 100;
     enemySpawnQueue = levels[currentLevelIndex]["enemySpawnQueue"];
 }
 
 function backgroundAudio() {
-    let backgroundMusic = document.getElementById("backgroundMusic");
     let audioImage = document.getElementById("audioImage");
     if (backgroundMusic.paused) {
         backgroundMusic.play();

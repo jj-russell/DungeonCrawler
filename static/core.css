@@ -29,6 +29,7 @@ img, video, iframe, figure {
 body {
     color: var(--bg-three);
     background-color: var(--bg-main);
+    text-shadow: 2px 2px black;
 }
 
 a {
