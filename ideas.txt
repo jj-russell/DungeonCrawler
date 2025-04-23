@@ -1,4 +1,0 @@
-lava tiles
-spike tiles
-character faces where mouse is on shoot
-dust cloud animation when sprinting
