@@ -1919,7 +1919,7 @@ let obstaclesAmount = 3;
 function createObstacles() {
     while (obstacles.length < obstaclesAmount) {
         let isValid = true;
-        let obX = randint(boundaryLocation()["left"], boundaryLocation()["right"]);
+        let obX = randint(boundaryLocation()["left"]+32, boundaryLocation()["right"]-32);
         let obY = randint(boundaryLocation()["up"]+32, boundaryLocation()["down"]-32);
 
         if (!(obX % squareSize === 0)) {

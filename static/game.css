@@ -74,14 +74,17 @@ header, footer {
     left: 10px;
 }
 
-#startPause {
+#musicInstructions {
     max-width: 200px;
     width: 100%;
+    font-size: 30px;
+    position: fixed;
+    bottom: 0;
+    right: 50px;
 }
 
 #controls > * {
     margin: 10px 0;
-    font-size: 30px;
 }
 
 #controls > h1 {
