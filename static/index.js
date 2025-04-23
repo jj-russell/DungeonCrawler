@@ -299,8 +299,8 @@ let enemyInfo = {
         "delay": 60,
     },
     "mage": {
-        "maxHealth": 4,
-        "attackDamage": 2,
+        "maxHealth": 3,
+        "attackDamage": 1,
         "speed": 3,
         "attackDistance": 6,
         "canKnockback": true,
@@ -446,7 +446,7 @@ function init() {
         {"var": healthGainImage, "url": "static/images/stats/HEALTH_GAIN.png"},
         {"var": powerupImage, "url": "static/images/stats/POWERUPS.png"},
         {"var": spikesImage, "url": "static/images/spikes.png"},
-        {"var": bossEffect, "url": "static/images/bossEffect.svg"},
+        {"var": bossEffect, "url": "static/images/bossEffect.png"},
         {"var": audioUp, "url": "static/images/volume-up.svg"},
         {"var": audioMute, "url": "static/images/volume-mute.svg"},
         {"var": walkAudio, "url": "static/audio/walk.wav"},
@@ -500,7 +500,6 @@ function draw() {
 
             handleEnemyAttacking();
 
-            drawEnemies();
             
             handleEnemyProjectiles();
 
@@ -509,6 +508,8 @@ function draw() {
             moveEnemies();
 
             handleBoss();
+            
+            drawEnemies();
 
             movePlayer(); 
 
@@ -1437,6 +1438,12 @@ function moveEnemies() {
 let bossEnemySpawnTimer = 0;
 let bossEnemiesCanSpawn = true;
 let canTeleport = true;
+let effectActive = false;
+let effectFrame = 7;
+let effectFrameCounter = 1;
+let effectReverse = false;
+let effectRepeats = 2;
+
 function handleBoss () {
     if (boss) {
         if (boss.isHit) {
@@ -1460,7 +1467,43 @@ function handleBoss () {
 
         if (elapsed >= 20000) {
             bossEnemiesCanSpawn = true;
-            enemySpawnQueue.push("paladin 1", "mage 2");
+            effectActive = true;
+        }
+        // draws a star shape around the boss to indicate he is spawning enemies
+        if(effectActive) {
+            context.drawImage(bossEffect, effectFrame*64, 128, 64, 64,
+                boss.x, boss.y+24, 64, 64)
+
+            if (!effectReverse) {
+                if (effectFrameCounter === 0) {
+                    effectFrame --;
+                    effectFrameCounter = 2;
+                    if (effectFrame === 0) {
+                        effectReverse = true;
+                    }
+                }
+                else {
+                    effectFrameCounter --;
+                }
+            }
+            else {
+                if (effectFrameCounter === 0) {
+                    effectFrame ++
+                    effectFrameCounter = 2;
+                    if (effectFrame === 7) {
+                        effectReverse = false;
+                        effectRepeats --;
+                    }
+                }
+                else {
+                    effectFrameCounter --;
+                }
+            }
+            if (effectRepeats === 0) {
+                effectActive = false;
+                effectRepeats = 2;
+                enemySpawnQueue.push("paladin 3", "mage 3"); // the boss spawns enemies
+            }
         }
     }
 
@@ -1871,13 +1914,13 @@ function load_assets(assets, callback) {
 }
 
 let obstacles = [];
-let obstaclesAmount = 5;
+let obstaclesAmount = 3;
 
 function createObstacles() {
     while (obstacles.length < obstaclesAmount) {
         let isValid = true;
-        let obX = randint(boundaryLocation()["left"]*8, boundaryLocation()["right"]-2*squareSize);
-        let obY = randint(boundaryLocation()["up"]*4, boundaryLocation()["down"]-2*squareSize);
+        let obX = randint(boundaryLocation()["left"], boundaryLocation()["right"]);
+        let obY = randint(boundaryLocation()["up"]+32, boundaryLocation()["down"]-32);
 
         if (!(obX % squareSize === 0)) {
             obX = (Math.round(obX / squareSize) * squareSize) + 1;
@@ -1890,9 +1933,21 @@ function createObstacles() {
             obY++;
         }
 
+        let o = { 
+            x: obX, 
+            y: obY, 
+            width: squareSize,
+            height: squareSize, 
+        };
+
         // obstacles cant spawn near player
         if ((player.x - 3*squareSize <= obX && player.x + 3*squareSize >= obX) && 
             (player.y - 3*squareSize <= obY && player.y + 3*squareSize >= obY)) {
+            isValid = false;
+            break;
+        }
+        
+        if (collides(o, spawn)) {
             isValid = false;
             break;
         }
@@ -1906,14 +1961,7 @@ function createObstacles() {
             }
         } 
         if (isValid) {    
-            let o = { 
-                x: obX, 
-                y: obY, 
-                width: squareSize,
-                height: squareSize, 
-            };
-                
-                obstacles.push(o);
+            obstacles.push(o);
         }
     }
 
@@ -2100,7 +2148,7 @@ function handlePowerups() {
 
 let levelTransitionActive = false;
 let transitionStartTime = 0;
-let transitionDuration = 1//4000;
+let transitionDuration = 4000;
 let nextLevelReady = false;
 
 function handleLevelTransition() {
