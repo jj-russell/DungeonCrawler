@@ -64,7 +64,6 @@ header, footer {
     font-size: 96px;
     position: absolute;
     top: 25%;
-    left: 35%;
 }
 
 #controls, #startPause {
@@ -86,6 +85,10 @@ header, footer {
     font-size: 30px;
 }
 
+#controls > h1 {
+    font-size: 36px;
+} 
+
 .odd {
     color: var(--bg-main);
 }
@@ -94,10 +97,16 @@ header, footer {
     color: var(--bg-two);
 }
 
-#end {
+#end{
     position: fixed;
     top: 200px;
     right: 50px;
+}
+
+#levelTransition  {
+    text-align: center;
+    position: fixed;
+    top: 35%;
 }
 
 .hide {
@@ -107,5 +116,5 @@ header, footer {
 #pause {
     text-align: center;
     position: fixed;
-    top: 200px;
+    top: 30%;
 }

@@ -133,7 +133,7 @@ let swordAnimation = {
 }
 
 let enemyProjectiles = [];
-let projectileSpeed = 8;
+let projectileSpeed = 6;
 let totalProjectiles = 0;
 
 let playerWalk = new Image();
@@ -157,6 +157,9 @@ let armoured_skeletonDead = new Image();
 let archerWalk = new Image();
 let archerAttack = new Image();
 let archerDead = new Image();
+let armoured_archerWalk = new Image();
+let armoured_archerAttack = new Image();
+let armoured_archerDead = new Image();
 let mageWalk = new Image();
 let mageAttack = new Image();
 let mageDead = new Image();
@@ -179,6 +182,8 @@ let healthGainImage = new Image();
 
 let powerupImage = new Image();
 
+let boss;
+
 let enemyImages = {
     "skeleton":{
         "walk" : skeletonWalk,
@@ -200,6 +205,11 @@ let enemyImages = {
         "attack" : archerAttack,
         "dead" : archerDead,
     },
+    "armoured_archer":{
+        "walk" : armoured_archerWalk,
+        "attack" : armoured_archerAttack,
+        "dead" : armoured_archerDead,
+    },
     "mage":{
         "walk" : mageWalk,
         "attack" : mageAttack,
@@ -219,7 +229,6 @@ let enemyHealthBar = {
 }
 
 let enemySpawnQueue = levels[currentLevelIndex]["enemySpawnQueue"];
-let enemiesPerLevel = 50;
 let maxEnemiesAtOnce = 10;
 let enemies = [];
 
@@ -231,7 +240,7 @@ let enemyInfo = {
         "attackType": "melee"
     },
     "armoured_skeleton": {
-        "maxHealth": 6,
+        "maxHealth": 4,
         "speed": 5,
         "canKnockback": true,
         "attackType": "melee"
@@ -243,6 +252,18 @@ let enemyInfo = {
         "attackType": "melee"
     },
     "archer": {
+        "maxHealth": 1,
+        "speed": 4,
+        "attackDistance": 4,
+        "canKnockback": true,
+        "attackType": "range",
+        "maxProjectiles": 1,
+        "projectile": arrowImage,
+        "attackAnimationFrames": 13,
+        "projectileAnimationFrames": 2,
+        "delay": 60,
+    },
+    "armoured_archer": {
         "maxHealth": 3,
         "speed": 4,
         "attackDistance": 4,
@@ -255,7 +276,7 @@ let enemyInfo = {
         "delay": 60,
     },
     "mage": {
-        "maxHealth": 5,
+        "maxHealth": 4,
         "speed": 6,
         "attackDistance": 6,
         "canKnockback": true,
@@ -295,6 +316,8 @@ let cheatsElement;
 let cheatStatus = 'OFF';
 let cheatClass = 'red';
 let endElement;
+let levelTransitionText;
+let levelBuffText;
 
 let currentMinute;
 let currentSecond;
@@ -323,9 +346,12 @@ function init() {
     highscoreElement = document.querySelector("#highscore");
     resultElement = document.querySelector("#result");
     endElement = document.querySelector("#end");
-    startPauseElement = document.querySelector("#startPause")
-    pauseElement = document.querySelector("#pause")
-    controlsElement = document.querySelector("#controls")
+    startPauseElement = document.querySelector("#startPause");
+    pauseElement = document.querySelector("#pause");
+    controlsElement = document.querySelector("#controls");
+    levelTransitionText = document.querySelector("#levelTransition > p");
+    levelBuffText = document.querySelector("#levelTransition > p+p");
+    
 
     window.addEventListener("keydown", activate, false);
     window.addEventListener("keyup", deactivate, false);
@@ -374,6 +400,9 @@ function init() {
         {"var": archerWalk, "url": "static/images/enemies/archer/ARCHER_WALK.png"},
         {"var": archerAttack, "url": "static/images/enemies/archer/ARCHER_ATTACK.png"},
         {"var": archerDead, "url": "static/images/enemies/archer/ARCHER_DEAD.png"},
+        {"var": armoured_archerWalk, "url": "static/images/enemies/armoured_archer/ARMOURED_ARCHER_WALK.png"},
+        {"var": armoured_archerAttack, "url": "static/images/enemies/armoured_archer/ARMOURED_ARCHER_ATTACK.png"},
+        {"var": armoured_archerDead, "url": "static/images/enemies/armoured_archer/ARMOURED_ARCHER_DEAD.png"},
         {"var": mageWalk, "url": "static/images/enemies/mage/MAGE_WALK.png"},
         {"var": mageAttack, "url": "static/images/enemies/mage/MAGE_ATTACK.png"},
         {"var": mageDead, "url": "static/images/enemies/mage/MAGE_DEAD.png"},
@@ -400,51 +429,63 @@ function init() {
 function draw() {
     if (!isPaused) {
         request_id = window.requestAnimationFrame(draw);
+        
+        if (levelComplete && !levelTransitionActive) {
+            endOfLevel();
+        }
+        
+        if (levelTransitionActive) {
+            handleLevelTransition();
+        } else {
+
+            let now = Date.now();
+            let elapsed = now - then;
+            if (elapsed <= fpsInterval) {
+                return;
+            }
+            then = now - (elapsed % fpsInterval);
+
+            levelComplete = (enemySpawnQueue.length === 0 && enemies.length === 0);
+
+            displayMap();
+
+            displayHUD()
+
+            if (enemySpawnQueue.length !== 0) {
+                createEnemies();
+            }
+
+            // draw player 
+            if (! player.isAttacking) {
+                context.drawImage(playerWalk, player.frameX*player.width, player.frameY*player.height, player.width, player.height,
+                                player.x, player.y, player.width, player.height);
+            }
+
+            handleAttacking();
+
+            handleEnemyAttacking();
+
+            drawEnemies();
+            
+            handleEnemyProjectiles();
+
+            handleProjectiles();
+            
+            moveEnemies();
+
+            handleBoss();
+
+            movePlayer(); 
+
+            playerStats();
+
+            // createObstacles();
+
+            createPowerups();
+
+            handlePowerups();
+        }
     }
-    let now = Date.now();
-    let elapsed = now - then;
-    if (elapsed <= fpsInterval) {
-        return;
-    }
-    then = now - (elapsed % fpsInterval);
-
-    levelComplete = (enemySpawnQueue.length === 0 && enemies.length === 0);
-
-    displayMap();
-
-    displayHUD()
-
-    if (enemiesPerLevel > 0 && enemySpawnQueue.length !== 0) {
-        createEnemies();
-    }
-
-    // draw player 
-    if (! player.isAttacking) {
-        context.drawImage(playerWalk, player.frameX*player.width, player.frameY*player.height, player.width, player.height,
-                        player.x, player.y, player.width, player.height);
-    }
-
-    handleAttacking();
-
-    handleEnemyAttacking();
-
-    drawEnemies();
-    
-    handleEnemyProjectiles();
-
-    handleProjectiles();
-    
-    moveEnemies();
-
-    movePlayer(); 
-
-    playerStats();
-
-    // createObstacles();
-
-    createPowerups();
-
-    handlePowerups();
 }
 
 function displayMap() {
@@ -496,57 +537,9 @@ function displayMap() {
         }
     }
     
-    if (levelComplete) {
-        endOfLevel();
-    }
-}
-
-function endOfLevel() {
-    if (currentLevel === 5) {
-        resultElement.innerHTML = "YOU WON"
-        resultElement.className = "green"
-        stop();
-        return
-    }
-    if (!doorsOpened) {
-        doorsOpened = true;
-        door2 = openDoor(door2);
-    }
-    if (collides(player, exit)) {
-        
-        door2 = closeDoor(door2);
-        doorsOpened = false;
-
-        if (currentLevel === 1) {
-            door1 = openDoor(door1);
-        }
-        
-        updateLevel();
-        player.x = canvas.width/2 -32;
-        player.y = 64;
-        levelComplete = false;
-    }
-}
-
-function updateLevel() {
-    maxPotionUses++;
-    toolbar.frameY = maxPotionUses;
-
-    maxPlayerHealth ++;
-    playerHealthBar.frameX ++;
-    player.health = playerHealthBar.frameY = maxPlayerHealth;
-
-    
-    maxPlayerStam ++;
-    staminaBar.frameX ++;
-    player.stamina = maxPlayerStam*10;
-    staminaBar.frameY = maxPlayerStam
-    
-    currentLevel ++;
-    currentLevelIndex ++;
-    player.score += 100;
-    enemySpawnQueue = levels[currentLevelIndex]["enemySpawnQueue"];
-    console.log(currentLevel, levels[currentLevelIndex])
+    // if (levelComplete) {
+    //     endOfLevel();
+    // }
 }
 
 function boundaryLocation() {
@@ -599,7 +592,7 @@ function displayHUD() {
         timeFrameCounter --;
     }
 
-    levelElement.innerHTML = `LEVEL ${currentLevel}`
+    levelElement.innerHTML = `LEVEL ${currentLevel}`;
 
     powerupElement.innerHTML = powerupMessage;
 
@@ -684,7 +677,9 @@ function handleInventory(event) {
 }
 
 function togglePause() {
-    isPaused = !isPaused;
+    if (!levelTransitionActive) {
+        isPaused = !isPaused;
+    }
      
     if (!isPaused) {
         startPauseElement.className = "";
@@ -881,7 +876,12 @@ function handleAttacking() {
                             e.isDying = true;
                             e.deathFrame = 0;
                             e.deathFrameCounter = 0;
-                            player.score ++;
+                            if (e.type === "boss") {
+                                player.score += 100;
+                            }
+                            else {
+                                player.score ++;
+                            }
                         }
                         e.isHit = true;
                     }
@@ -924,9 +924,6 @@ function handleAttacking() {
             if (player.swordFrame === 6) {
                 player.isAttacking = false;
                 player.swordFrame = 0;
-                for (let e of enemies) {
-                    e.isHit = false;
-                }
             }
         }
     
@@ -1039,7 +1036,6 @@ function handleProjectiles() {
             p.hasFired = true;
         }
         
-        // regular projectile path
         p.x += p.dx * projectileSpeed
         p.y += p.dy * projectileSpeed
 
@@ -1215,7 +1211,7 @@ function createEnemies() {
             }
 
             if (enemyInfo[e.type]["attackType"] === "range") {
-                // e.canFire = false;
+                e.canFire = false;
                 e.projectileCounter = 0;
                 totalProjectiles += enemyInfo[e.type]["maxProjectiles"];
             }
@@ -1230,8 +1226,11 @@ function createEnemies() {
             e.x = (e.x + (4 - e.x % 4));
             e.y = (e.y + (4 - e.y % 4));
             
+            if (e.type === "boss") {
+                boss = e;
+            }
+
             enemies.push(e);
-            enemiesPerLevel --;
 
             if (enemies.length === maxEnemiesAtOnce) {
                 // if (initialAmount === amount) {
@@ -1297,6 +1296,15 @@ function drawEnemies() {
 
 function moveEnemies() {
     for (let e of enemies) {
+        if (e.isHit) {
+            if (e.hitFrameCounter === 15) {
+                e.isHit = false;
+                e.hitFrameCounter = 0;
+            }
+            else {
+                e.hitFrameCounter++;
+            }
+        }
         // dont move if attacking, dying, spawning
         if (e.isAttacking || e.isDying || e.isSpawning) {
             continue;
@@ -1306,15 +1314,6 @@ function moveEnemies() {
             y: e.y+12, 
             width: e.width/2, 
             height: e.height-12
-        }
-        if (e.isHit) {
-            if (e.hitFrameCounter === 15) {
-                e.isHit = false;
-                e.hitFrameCounter = 0;
-            }
-            else {
-                e.hitFrameCounter++;
-            }
         }
 
         // if enemy is next to the player stop and attack
@@ -1397,6 +1396,37 @@ function moveEnemies() {
     }
 }
 
+let bossEnemySpawnTimer = 0;
+let bossEnemiesCanSpawn = true;
+let canTeleport = true;
+function handleBoss () {
+    if (boss) {
+        if (boss.isHit) {
+            if (canTeleport) {
+                boss.x = randint(boundaryLocation()["left"]*8, boundaryLocation()["right"]-boss.width);
+                boss.y = randint(boundaryLocation()["up"]*4, boundaryLocation()["down"]-boss.height);
+                canTeleport = false;
+            }
+        }
+        else {
+            canTeleport = true;
+        }
+
+        if (bossEnemiesCanSpawn) {
+            bossEnemySpawnTimer = Date.now();
+            bossEnemiesCanSpawn = false;
+        }
+        
+        let currentTime = Date.now();
+        let elapsed = currentTime - bossEnemySpawnTimer;
+
+        if (elapsed >= 30000) {
+            bossEnemiesCanSpawn = true;
+            enemySpawnQueue.push("paladin 1", "mage 1");
+        }
+    }
+
+}
 
 function handleEnemyAttacking() {
     for (let e of enemies) {
@@ -1446,7 +1476,7 @@ function handleEnemyAttacking() {
                     e.attackFrameX++;
                     
                     if (e.attackFrameX === enemyInfo[e.type]["attackAnimationFrames"]) {
-                        // e.canFire = true;
+                        e.canFire = true;
                         e.isAttacking = false;
                         e.attackFrameX = 0;
                     }
@@ -1486,7 +1516,7 @@ function handleEnemyProjectiles() {
             else {
                 p.canFire = true;
             }
-            if (p.id === e.id && p.canFire) {
+            if (p.id === e.id && p.canFire && e.canFire) {
 
                 let projectileHitbox = {
                     x: p.x,
@@ -1579,6 +1609,9 @@ function handleEnemyProjectiles() {
                             p.hasFired = false;
                             p.canFire = false;
                             p.delay = enemyInfo[e.type]["delay"];
+                            if (enemyInfo[e.type]["maxProjectiles"] === 1) {
+                                e.canFire = false;
+                            }
                             break;
                         }
                     }
@@ -2058,4 +2091,86 @@ function handlePowerups() {
         }
         powerupCanSpawn = false;
     }
+}
+
+let levelTransitionActive = false;
+let transitionStartTime = 0;
+let transitionDuration = 3000;
+let nextLevelReady = false;
+
+function handleLevelTransition() {
+    let currentTime = Date.now();
+    let elapsed = currentTime - transitionStartTime;
+    
+    context.fillStyle = "rgba(0, 0, 0, 0.85)";
+    context.fillRect(24, 24, canvas.width-48, canvas.height-88);
+    
+    levelTransitionText.innerHTML = `LEVEL COMPLETE!`;
+    levelBuffText.innerHTML = 'HEALTH, STAMINA, POTION LIMIT INCREASED';
+    
+    if (elapsed > transitionDuration - 1000) {
+        levelTransitionText.innerHTML = `LEVEL ${currentLevel}`;
+        levelBuffText.innerHTML = '';
+        
+        if (!nextLevelReady) {
+            nextLevelReady = true;
+            updateLevel();
+        }
+    }
+    
+    // End transition after the specified duration
+    if (elapsed >= transitionDuration) {
+        levelTransitionText.innerHTML = '';
+        levelBuffText.innerHTML = '';
+        levelTransitionActive = false;
+        levelComplete = false;
+    }
+}
+
+function endOfLevel() {
+    if (currentLevel === 5) {
+        resultElement.innerHTML = "YOU WON"
+        resultElement.className = "green"
+        stop();
+        return
+    }
+    if (!doorsOpened) {
+        doorsOpened = true;
+        door2 = openDoor(door2);
+    }
+    if (collides(player, exit)) {
+        
+        door2 = closeDoor(door2);
+        doorsOpened = false;
+
+        if (currentLevel === 1) {
+            door1 = openDoor(door1);
+        }
+        
+        player.x = canvas.width/2 -32;
+        player.y = 64;
+        levelComplete = false;
+        levelTransitionActive = true;
+        transitionStartTime = Date.now();
+        nextLevelReady = false;
+    }
+}
+
+function updateLevel() {
+    maxPotionUses++;
+    toolbar.frameY = maxPotionUses;
+
+    maxPlayerHealth ++;
+    playerHealthBar.frameX ++;
+    player.health = playerHealthBar.frameY = maxPlayerHealth;
+
+    
+    maxPlayerStam ++;
+    staminaBar.frameX ++;
+    player.stamina = maxPlayerStam*10;
+    staminaBar.frameY = maxPlayerStam
+    currentLevel ++;
+    currentLevelIndex ++;
+    player.score += 100;
+    enemySpawnQueue = levels[currentLevelIndex]["enemySpawnQueue"];
 }

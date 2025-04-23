@@ -1,12 +1,13 @@
 const levels = [
     {
       id: 1,
-      enemySpawnQueue: ["skeleton 1"],
+      enemySpawnQueue: []/*["skeleton 5", "archer 5", "skeleton 5", "archer 5", "skeleton 5", 
+                        "archer 5", "skeleton 5", "archer 5", "skeleton 5", "archer 5",],*/
       
     },
     {
       id: 2,
-      enemySpawnQueue: ["skeleton 1"]
+      enemySpawnQueue: ["skeleton 10", "archer 10", "armoured_skeleton 10", "archer 10", "armoured_skeleton 10", "archer 10"]
     },
     {
       id: 3,
