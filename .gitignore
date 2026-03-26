@@ -1,0 +1,5 @@
+app.db
+schema.sql
+flask_session/
+.venv/
+__pycache__/
