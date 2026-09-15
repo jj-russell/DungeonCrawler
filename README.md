@@ -38,6 +38,26 @@ A web-based dungeon crawler game built with Flask and JavaScript. Battle through
    pip install -r requirements.txt
    ```
 
+4. **Initialize the database:**
+
+   **Linux/Mac:**
+
+   ```bash
+   sqlite3 app.db < schema.sql
+   ```
+
+   **Windows (Command Prompt):**
+
+   ```cmd
+   sqlite3 app.db < schema.sql
+   ```
+
+   **Windows (PowerShell):**
+
+   ```powershell
+   Get-Content schema.sql | sqlite3 app.db
+   ```
+
 ### Run the Game
 
 ```bash
