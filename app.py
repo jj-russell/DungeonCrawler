@@ -4,7 +4,6 @@ from flask_session import Session
 from werkzeug.security import generate_password_hash, check_password_hash
 from forms import RegistrationForm, LoginForm
 from functools import wraps
-from datetime import datetime
 
 app = Flask(__name__)
 app.teardown_appcontext(close_db)
